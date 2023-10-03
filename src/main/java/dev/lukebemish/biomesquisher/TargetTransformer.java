@@ -4,9 +4,7 @@ import net.minecraft.util.Mth;
 import net.minecraft.world.level.biome.Climate;
 import org.jetbrains.annotations.Nullable;
 
-import java.util.Objects;
-
-public final class BiomeSquisher {
+public final class TargetTransformer {
     private final float temperatureCenter;
     private final float temperatureSpread;
     private final float humidityCenter;
@@ -18,8 +16,9 @@ public final class BiomeSquisher {
     private final float weirdnessCenter;
     private final float weirdnessSpread;
     private final float spreadSquareMagnitude;
+    private final float volume;
 
-    public BiomeSquisher(
+    public TargetTransformer(
             float temperatureCenter, float temperatureSpread,
             float humidityCenter, float humiditySpread,
             float continentalnessCenter, float continentalnessSpread,
@@ -42,6 +41,17 @@ public final class BiomeSquisher {
                 + continentalnessSpread * continentalnessSpread
                 + erosionSpread * erosionSpread
                 + weirdnessSpread * weirdnessSpread;
+        this.volume = temperatureSpread * humiditySpread * continentalnessSpread * erosionSpread * weirdnessSpread;
+    }
+
+    TargetTransformer scale(float oldVolume) {
+        return new TargetTransformer(
+                temperatureCenter, temperatureSpread / oldVolume,
+                humidityCenter, humiditySpread / oldVolume,
+                continentalnessCenter, continentalnessSpread / oldVolume,
+                erosionCenter, erosionSpread / oldVolume,
+                weirdnessCenter, weirdnessSpread / oldVolume
+        );
     }
 
     public @Nullable Climate.TargetPoint squish(Climate.TargetPoint initial) {
@@ -89,21 +99,21 @@ public final class BiomeSquisher {
             float temperature, float humidity, float continentalness, float erosion, float weirdness,
             float ts, float hs, float cs, float es, float ws
     ) {
-        float distance = (0.5f - Math.abs(temperature - 0.5f)) / ts;
+        float distance = (1 - Math.abs(temperature)) / ts;
         float hDistance;
         float cDistance;
         float eDistance;
         float wDistance;
-        if ((hDistance = (0.5f - Math.abs(humidity - 0.5f)) / hs) < distance) {
+        if ((hDistance = (1 - Math.abs(humidity)) / hs) < distance) {
             distance = hDistance;
         }
-        if ((cDistance = (0.5f - Math.abs(continentalness - 0.5f)) / cs) < distance) {
+        if ((cDistance = (1 - Math.abs(continentalness)) / cs) < distance) {
             distance = cDistance;
         }
-        if ((eDistance = (0.5f - Math.abs(erosion - 0.5f)) / es) < distance) {
+        if ((eDistance = (1 - Math.abs(erosion)) / es) < distance) {
             distance = eDistance;
         }
-        if ((wDistance = (0.5f - Math.abs(weirdness - 0.5f)) / ws) < distance) {
+        if ((wDistance = (1 - Math.abs(weirdness)) / ws) < distance) {
             distance = wDistance;
         }
         return distance;
@@ -140,7 +150,7 @@ public final class BiomeSquisher {
             distance = Math.min(distance, distanceSquare(
                     tOriginal, hOriginal, cOriginal, eOriginal, wOriginal,
                     ts, hs, cs, es, ws,
-                    0, h, c, e, w));
+                    -1, h, c, e, w));
         }
 
         if (hDiff > 0) {
@@ -162,7 +172,7 @@ public final class BiomeSquisher {
             distance = Math.min(distance, distanceSquare(
                     tOriginal, hOriginal, cOriginal, eOriginal, wOriginal,
                     ts, hs, cs, es, ws,
-                    t, 0, c, e, w));
+                    t, -1, c, e, w));
         }
 
         if (cDiff > 0) {
@@ -184,7 +194,7 @@ public final class BiomeSquisher {
             distance = Math.min(distance, distanceSquare(
                     tOriginal, hOriginal, cOriginal, eOriginal, wOriginal,
                     ts, hs, cs, es, ws,
-                    t, h, 0, e, w));
+                    t, h, -1, e, w));
         }
 
         if (eDiff > 0) {
@@ -206,7 +216,7 @@ public final class BiomeSquisher {
             distance = Math.min(distance, distanceSquare(
                     tOriginal, hOriginal, cOriginal, eOriginal, wOriginal,
                     ts, hs, cs, es, ws,
-                    t, h, c, 0, w));
+                    t, h, c, -1, w));
         }
 
         if (wDiff > 0) {
@@ -228,10 +238,10 @@ public final class BiomeSquisher {
             distance = Math.min(distance, distanceSquare(
                     tOriginal, hOriginal, cOriginal, eOriginal, wOriginal,
                     ts, hs, cs, es, ws,
-                    t, h, c, e, 0));
+                    t, h, c, e, -1));
         }
 
-        if (distance > 6) {
+        if (distance > 12) {
             return distanceToEdge(
                     tOriginal, hOriginal, cOriginal, eOriginal, wOriginal,
                     ts, hs, cs, es, ws
@@ -247,5 +257,9 @@ public final class BiomeSquisher {
             float t2, float h2, float c2, float e2, float w2
     ) {
         return Mth.square(t1 - t2) / ts + Mth.square(h1 - h2) / hs + Mth.square(c1 - c2) / cs + Mth.square(e1 - e2) / es + Mth.square(w1 - w2) / ws;
+    }
+
+    public float volume() {
+        return volume;
     }
 }

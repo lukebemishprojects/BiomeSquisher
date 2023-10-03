@@ -27,6 +27,9 @@ dependencies {
     modImplementation "net.fabricmc:fabric-loader:${project.loader_version}"
 
     modImplementation "net.fabricmc.fabric-api:fabric-api:${project.fabric_version}"
+
+    implementation 'ar.com.hjg:pngj:2.1.0'
+    include 'ar.com.hjg:pngj:2.1.0'
 }
 
 processResources {
