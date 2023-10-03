@@ -1,0 +1,20 @@
+{
+	"schemaVersion": 1,
+	"id": "biomesquisher",
+	"version": "${version}",
+	"name": "Biome Squisher",
+	"description": "Squishes biomes to make room! Very WIP",
+	"authors": [
+		"Luke Bemish"
+	],
+	"license": "BSD-3-clause",
+	"environment": "*",
+	"entrypoints": {
+		"main": [
+		]
+	},
+	"mixins": [
+		"biomesquisher.mixins.json"
+	],
+	"depends": {}
+}
