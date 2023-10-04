@@ -1,0 +1,17 @@
+{
+	"schemaVersion": 1,
+	"id": "biomesquishertest",
+	"version": "${version}",
+	"name": "Biome Squisher - Test",
+	"description": "Test mod for BiomeSquisher",
+	"authors": [
+		"Luke Bemish"
+	],
+	"license": "BSD-3-clause",
+	"environment": "*",
+	"entrypoints": {
+		"main": [
+      "dev.lukebemish.biomesquisher.test.BiomeSquisherTestMod"
+		]
+	}
+}

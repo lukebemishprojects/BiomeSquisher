@@ -17,15 +17,18 @@ public final class TargetTransformer {
     private final float weirdnessSpread;
     private final float spreadSquareMagnitude;
     private final float volume;
+    private final float depthStart;
+    private final float depthEnd;
 
     public TargetTransformer(
-            float temperatureCenter, float temperatureSpread,
-            float humidityCenter, float humiditySpread,
-            float continentalnessCenter, float continentalnessSpread,
-            float erosionCenter, float erosionSpread,
-            // Ignore depth, to not squish oceans badly
-            float weirdnessCenter, float weirdnessSpread
-    ) {
+        float temperatureCenter, float temperatureSpread,
+        float humidityCenter, float humiditySpread,
+        float continentalnessCenter, float continentalnessSpread,
+        float erosionCenter, float erosionSpread,
+        // Ignore depth, to not squish oceans badly
+        float weirdnessCenter, float weirdnessSpread,
+        // And have a fixed range for depth to squish less outside of that
+        float depthStart, float depthEnd) {
         this.temperatureCenter = temperatureCenter;
         this.temperatureSpread = temperatureSpread;
         this.humidityCenter = humidityCenter;
@@ -36,6 +39,8 @@ public final class TargetTransformer {
         this.erosionSpread = erosionSpread;
         this.weirdnessCenter = weirdnessCenter;
         this.weirdnessSpread = weirdnessSpread;
+        this.depthStart = depthStart;
+        this.depthEnd = depthEnd;
         this.spreadSquareMagnitude = temperatureSpread * temperatureSpread
                 + humiditySpread * humiditySpread
                 + continentalnessSpread * continentalnessSpread
@@ -50,8 +55,8 @@ public final class TargetTransformer {
                 humidityCenter, humiditySpread / oldVolume,
                 continentalnessCenter, continentalnessSpread / oldVolume,
                 erosionCenter, erosionSpread / oldVolume,
-                weirdnessCenter, weirdnessSpread / oldVolume
-        );
+                weirdnessCenter, weirdnessSpread / oldVolume,
+            depthStart, depthEnd);
     }
 
     public @Nullable Climate.TargetPoint squish(Climate.TargetPoint initial) {
@@ -60,6 +65,7 @@ public final class TargetTransformer {
         float continentalness = Climate.unquantizeCoord(initial.continentalness());
         float erosion = Climate.unquantizeCoord(initial.erosion());
         float weirdness = Climate.unquantizeCoord(initial.weirdness());
+        float depth = Climate.unquantizeCoord(initial.depth());
 
         float distanceToEdgeProjected = distanceToEdgeProjection(
                 temperatureCenter, humidityCenter, continentalnessCenter, erosionCenter, weirdnessCenter,
@@ -75,7 +81,10 @@ public final class TargetTransformer {
         float dist = pureDistance / (distanceToEdgeProjected + pureDistance);
 
         if (dist < 1) {
-            return null;
+            if (depth >= depthStart && depth <= depthEnd) {
+                return null;
+            }
+            return initial;
         }
 
         float movedDistRatio = (dist - Mth.sqrt(dist * dist - 1)/(this.spreadSquareMagnitude-1));
@@ -84,6 +93,12 @@ public final class TargetTransformer {
         float cDiff = continentalnessCenter - continentalness;
         float eDiff = erosionCenter - erosion;
         float wDiff = weirdnessCenter - weirdness;
+
+        if (depth < depthStart) {
+            movedDistRatio *= (depth + 1) / (depthStart + 1);
+        } else if (depth > depthEnd) {
+            movedDistRatio *= (1 - depth) / (1 - depthEnd);
+        }
 
         return new Climate.TargetPoint(
                 Climate.quantizeCoord(temperature + tDiff * movedDistRatio),
@@ -124,11 +139,11 @@ public final class TargetTransformer {
             float ts, float hs, float cs, float es, float ws,
             float tOriginal, float hOriginal, float cOriginal, float eOriginal, float wOriginal
     ) {
-        float tDiff = tCenter - tOriginal;
-        float hDiff = hCenter - hOriginal;
-        float cDiff = cCenter - cOriginal;
-        float eDiff = eCenter - eOriginal;
-        float wDiff = wCenter - wOriginal;
+        float tDiff = tOriginal - tCenter;
+        float hDiff = hOriginal - hCenter;
+        float cDiff = cOriginal - cCenter;
+        float eDiff = eOriginal - eCenter;
+        float wDiff = wOriginal - wCenter;
         float distance = Float.MAX_VALUE;
 
         if (tDiff > 0) {

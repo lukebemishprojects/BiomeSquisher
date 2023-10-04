@@ -7,7 +7,7 @@ public class BiomeSquisherMod implements ModInitializer {
     @Override
     public void onInitialize() {
         CommandRegistrationCallback.EVENT.register((dispatcher, buildContext, environment) -> {
-            BiomeDumpCommand.register(dispatcher, buildContext);
+            BiomeSquisherCommands.register(dispatcher, buildContext);
         });
     }
 }

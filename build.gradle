@@ -15,7 +15,9 @@ repositories {
 }
 
 loom {
-
+    runs.configureEach {
+        source = sourceSets.test
+    }
 }
 
 dependencies {
@@ -28,11 +30,21 @@ dependencies {
 
     modImplementation "net.fabricmc.fabric-api:fabric-api:${project.fabric_version}"
 
-    implementation 'ar.com.hjg:pngj:2.1.0'
-    include 'ar.com.hjg:pngj:2.1.0'
+    include(implementation('ar.com.hjg:pngj:2.1.0'))
+    include(implementation(annotationProcessor("io.github.llamalad7:mixinextras-fabric:0.2.0-rc.5")))
+
+    testImplementation sourceSets.main.output
 }
 
 processResources {
+    inputs.property "version", project.version
+
+    filesMatching("fabric.mod.json") {
+        expand "version": project.version
+    }
+}
+
+processTestResources {
     inputs.property "version", project.version
 
     filesMatching("fabric.mod.json") {
