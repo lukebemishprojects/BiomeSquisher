@@ -30,7 +30,11 @@ public class ParameterListMixin implements Squishable {
         Squishers squishers = new Squishers();
         SquisherCollectionCallback.EVENT.invoker().collect(key, squishers, access);
         this.squishers = squishers;
-        System.out.println(squishers);
+    }
+
+    @Override
+    public @Nullable Squishers biomesquisher_squishers() {
+        return squishers;
     }
 
     @ModifyVariable(
@@ -76,7 +80,6 @@ public class ParameterListMixin implements Squishable {
     private Climate.TargetPoint biomesquisher_processTargetPoint(Climate.TargetPoint targetPoint, LocalRef<Holder<Biome>> result) {
         if (this.squishers != null) {
             var either = this.squishers.apply(targetPoint);
-            System.out.println(either);
             if (either.right().isPresent()) {
                 result.set(either.right().get());
             }

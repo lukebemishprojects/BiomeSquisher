@@ -5,7 +5,9 @@
 	"mixins": [
     "MultiNoiseBiomeSourceAccessor",
     "ParameterListMixin",
-    "RegistryDataLoaderMixin"
+    "MinecraftServerMixin",
+    "MultiNoiseBiomeSourceMixin",
+    "MultiNoiseBiomeSourceParameterListMixin"
   ],
 	"injectors": {
 		"defaultRequire": 1

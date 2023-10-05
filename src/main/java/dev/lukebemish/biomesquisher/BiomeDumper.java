@@ -71,6 +71,7 @@ public class BiomeDumper {
                 continue;
             }
             indices[i] = location.getAt(indexed);
+            indexed += 1;
         }
         var now = new Date();
         Path outputDir = FabricLoader.getInstance().getGameDir().resolve("dumps").resolve("biomesquisher");

@@ -6,57 +6,57 @@ import org.jetbrains.annotations.Nullable;
 
 public final class TargetTransformer {
     private final float temperatureCenter;
-    private final float temperatureSpread;
     private final float humidityCenter;
-    private final float humiditySpread;
     private final float continentalnessCenter;
-    private final float continentalnessSpread;
     private final float erosionCenter;
-    private final float erosionSpread;
     private final float weirdnessCenter;
-    private final float weirdnessSpread;
-    private final float spreadSquareMagnitude;
-    private final float volume;
+    private final float relativeSpread;
+    private final float relativeVolume;
     private final float depthStart;
     private final float depthEnd;
 
     public TargetTransformer(
-        float temperatureCenter, float temperatureSpread,
-        float humidityCenter, float humiditySpread,
-        float continentalnessCenter, float continentalnessSpread,
-        float erosionCenter, float erosionSpread,
+        float temperatureCenter,
+        float humidityCenter,
+        float continentalnessCenter,
+        float erosionCenter,
         // Ignore depth, to not squish oceans badly
-        float weirdnessCenter, float weirdnessSpread,
+        float weirdnessCenter,
         // And have a fixed range for depth to squish less outside of that
-        float depthStart, float depthEnd) {
+        float depthStart, float depthEnd,
+        float spread) {
         this.temperatureCenter = temperatureCenter;
-        this.temperatureSpread = temperatureSpread;
         this.humidityCenter = humidityCenter;
-        this.humiditySpread = humiditySpread;
         this.continentalnessCenter = continentalnessCenter;
-        this.continentalnessSpread = continentalnessSpread;
         this.erosionCenter = erosionCenter;
-        this.erosionSpread = erosionSpread;
         this.weirdnessCenter = weirdnessCenter;
-        this.weirdnessSpread = weirdnessSpread;
         this.depthStart = depthStart;
         this.depthEnd = depthEnd;
-        this.spreadSquareMagnitude = temperatureSpread * temperatureSpread
-                + humiditySpread * humiditySpread
-                + continentalnessSpread * continentalnessSpread
-                + erosionSpread * erosionSpread
-                + weirdnessSpread * weirdnessSpread;
-        this.volume = temperatureSpread * humiditySpread * continentalnessSpread * erosionSpread * weirdnessSpread;
+        this.relativeSpread = spread / 2;
+        this.relativeVolume = (float) Math.pow(relativeSpread, 5);
     }
 
     TargetTransformer scale(float oldVolume) {
         return new TargetTransformer(
-                temperatureCenter, temperatureSpread / oldVolume,
-                humidityCenter, humiditySpread / oldVolume,
-                continentalnessCenter, continentalnessSpread / oldVolume,
-                erosionCenter, erosionSpread / oldVolume,
-                weirdnessCenter, weirdnessSpread / oldVolume,
-            depthStart, depthEnd);
+                temperatureCenter,
+                humidityCenter,
+                continentalnessCenter,
+                erosionCenter,
+                weirdnessCenter,
+            depthStart, depthEnd,
+            (float) (relativeSpread / Math.pow(oldVolume, 0.2)));
+    }
+
+    public @Nullable Climate.TargetPoint desquish(Climate.TargetPoint initial) {
+        float temperature = Climate.unquantizeCoord(initial.temperature());
+        float humidity = Climate.unquantizeCoord(initial.humidity());
+        float continentalness = Climate.unquantizeCoord(initial.continentalness());
+        float erosion = Climate.unquantizeCoord(initial.erosion());
+        float weirdness = Climate.unquantizeCoord(initial.weirdness());
+        float depth = Climate.unquantizeCoord(initial.depth());
+
+        // TODO: implement
+        return null;
     }
 
     public @Nullable Climate.TargetPoint squish(Climate.TargetPoint initial) {
@@ -67,27 +67,19 @@ public final class TargetTransformer {
         float weirdness = Climate.unquantizeCoord(initial.weirdness());
         float depth = Climate.unquantizeCoord(initial.depth());
 
-        float distanceToEdgeProjected = distanceToEdgeProjection(
-                temperatureCenter, humidityCenter, continentalnessCenter, erosionCenter, weirdnessCenter,
-                temperatureSpread, humiditySpread, continentalnessSpread, erosionSpread, weirdnessSpread,
-                temperature, humidity, continentalness, erosion, weirdness
+        float dist = distanceScaledProjection(
+            temperature, humidity, continentalness, erosion, weirdness,
+            temperatureCenter, humidityCenter, continentalnessCenter, erosionCenter, weirdnessCenter
         );
-        float pureDistance = Mth.sqrt(distanceSquare(
-                temperatureCenter, humidityCenter, continentalnessCenter, erosionCenter, weirdnessCenter,
-                temperatureSpread, humiditySpread, continentalnessSpread, erosionSpread, weirdnessSpread,
-                temperature, humidity, continentalness, erosion, weirdness
-        ));
 
-        float dist = pureDistance / (distanceToEdgeProjected + pureDistance);
-
-        if (dist < 1) {
+        if (dist < relativeSpread) {
             if (depth >= depthStart && depth <= depthEnd) {
                 return null;
             }
             return initial;
         }
 
-        float movedDistRatio = (dist - Mth.sqrt(dist * dist - 1)/(this.spreadSquareMagnitude-1));
+        float movedDistRatio = (float) (dist - Math.pow((Math.pow(dist, 5) - this.relativeVolume)/(1 - this.relativeVolume), 0.2)) / dist;
         float tDiff = temperatureCenter - temperature;
         float hDiff = humidityCenter - humidity;
         float cDiff = continentalnessCenter - continentalness;
@@ -110,171 +102,188 @@ public final class TargetTransformer {
         );
     }
 
-    private static float distanceToEdge(
-            float temperature, float humidity, float continentalness, float erosion, float weirdness,
-            float ts, float hs, float cs, float es, float ws
-    ) {
-        float distance = (1 - Math.abs(temperature)) / ts;
-        float hDistance;
-        float cDistance;
-        float eDistance;
-        float wDistance;
-        if ((hDistance = (1 - Math.abs(humidity)) / hs) < distance) {
-            distance = hDistance;
-        }
-        if ((cDistance = (1 - Math.abs(continentalness)) / cs) < distance) {
-            distance = cDistance;
-        }
-        if ((eDistance = (1 - Math.abs(erosion)) / es) < distance) {
-            distance = eDistance;
-        }
-        if ((wDistance = (1 - Math.abs(weirdness)) / ws) < distance) {
-            distance = wDistance;
-        }
-        return distance;
-    }
+    private float distanceScaledProjection(
+        float tO, float hO, float cO, float eO, float wO,
+        float tC, float hC, float cC, float eC, float wC) {
 
-    private static float distanceToEdgeProjection(
-            float tCenter, float hCenter, float cCenter, float eCenter, float wCenter,
-            float ts, float hs, float cs, float es, float ws,
-            float tOriginal, float hOriginal, float cOriginal, float eOriginal, float wOriginal
-    ) {
-        float tDiff = tOriginal - tCenter;
-        float hDiff = hOriginal - hCenter;
-        float cDiff = cOriginal - cCenter;
-        float eDiff = eOriginal - eCenter;
-        float wDiff = wOriginal - wCenter;
+        float tDiff = tO - tC;
+        float hDiff = hO - hC;
+        float cDiff = cO - cC;
+        float eDiff = eO - eC;
+        float wDiff = wO - wC;
+
         float distance = Float.MAX_VALUE;
 
         if (tDiff > 0) {
-            float time = (1 - tOriginal) / tDiff;
-            float h = hOriginal + hDiff * time;
-            float c = cOriginal + cDiff * time;
-            float e = eOriginal + eDiff * time;
-            float w = wOriginal + wDiff * time;
-            distance = Math.min(distance, distanceSquare(
-                    tOriginal, hOriginal, cOriginal, eOriginal, wOriginal,
-                    ts, hs, cs, es, ws,
-                    1, h, c, e, w));
+            float time = (1 - tO) / tDiff;
+            float h = hO + hDiff * time;
+            float c = cO + cDiff * time;
+            float e = eO + eDiff * time;
+            float w = wO + wDiff * time;
+            float dist = distanceSquare(
+                tO, hO, cO, eO, wO,
+                1, h, c, e, w);
+            if (dist < distance) {
+                distance = dist;
+            }
         } else if (tDiff < 0) {
-            float time = tOriginal / tDiff;
-            float h = hOriginal + hDiff * time;
-            float c = cOriginal + cDiff * time;
-            float e = eOriginal + eDiff * time;
-            float w = wOriginal + wDiff * time;
-            distance = Math.min(distance, distanceSquare(
-                    tOriginal, hOriginal, cOriginal, eOriginal, wOriginal,
-                    ts, hs, cs, es, ws,
-                    -1, h, c, e, w));
+            float time = (1 + tO) / tDiff;
+            float h = hO + hDiff * time;
+            float c = cO + cDiff * time;
+            float e = eO + eDiff * time;
+            float w = wO + wDiff * time;
+            float dist = distanceSquare(
+                tO, hO, cO, eO, wO,
+                -1, h, c, e, w);
+            if (dist < distance) {
+                distance = dist;
+            }
         }
 
         if (hDiff > 0) {
-            float time = (1 - hOriginal) / hDiff;
-            float t = tOriginal + tDiff * time;
-            float c = cOriginal + cDiff * time;
-            float e = eOriginal + eDiff * time;
-            float w = wOriginal + wDiff * time;
-            distance = Math.min(distance, distanceSquare(
-                    tOriginal, hOriginal, cOriginal, eOriginal, wOriginal,
-                    ts, hs, cs, es, ws,
-                    t, 1, c, e, w));
+            float time = (1 - hO) / hDiff;
+            float t = tO + tDiff * time;
+            float c = cO + cDiff * time;
+            float e = eO + eDiff * time;
+            float w = wO + wDiff * time;
+            float dist = distanceSquare(
+                tO, hO, cO, eO, wO,
+                t, 1, c, e, w);
+            if (dist < distance) {
+                distance = dist;
+            }
         } else if (hDiff < 0) {
-            float time = hOriginal / hDiff;
-            float t = tOriginal + tDiff * time;
-            float c = cOriginal + cDiff * time;
-            float e = eOriginal + eDiff * time;
-            float w = wOriginal + wDiff * time;
-            distance = Math.min(distance, distanceSquare(
-                    tOriginal, hOriginal, cOriginal, eOriginal, wOriginal,
-                    ts, hs, cs, es, ws,
-                    t, -1, c, e, w));
+            float time = (1 + hO) / hDiff;
+            float t = tO + tDiff * time;
+            float c = cO + cDiff * time;
+            float e = eO + eDiff * time;
+            float w = wO + wDiff * time;
+            float dist = distanceSquare(
+                tO, hO, cO, eO, wO,
+                t, -1, c, e, w);
+            if (dist < distance) {
+                distance = dist;
+            }
         }
 
         if (cDiff > 0) {
-            float time = (1 - cOriginal) / cDiff;
-            float t = tOriginal + tDiff * time;
-            float h = hOriginal + hDiff * time;
-            float e = eOriginal + eDiff * time;
-            float w = wOriginal + wDiff * time;
-            distance = Math.min(distance, distanceSquare(
-                    tOriginal, hOriginal, cOriginal, eOriginal, wOriginal,
-                    ts, hs, cs, es, ws,
-                    t, h, 1, e, w));
+            float time = (1 - cO) / cDiff;
+            float t = tO + tDiff * time;
+            float h = hO + hDiff * time;
+            float e = eO + eDiff * time;
+            float w = wO + wDiff * time;
+            float dist = distanceSquare(
+                tO, hO, cO, eO, wO,
+                t, h, 1, e, w);
+            if (dist < distance) {
+                distance = dist;
+            }
         } else if (cDiff < 0) {
-            float time = cOriginal / cDiff;
-            float t = tOriginal + tDiff * time;
-            float h = hOriginal + hDiff * time;
-            float e = eOriginal + eDiff * time;
-            float w = wOriginal + wDiff * time;
-            distance = Math.min(distance, distanceSquare(
-                    tOriginal, hOriginal, cOriginal, eOriginal, wOriginal,
-                    ts, hs, cs, es, ws,
-                    t, h, -1, e, w));
+            float time = (1 + cO) / cDiff;
+            float t = tO + tDiff * time;
+            float h = hO + hDiff * time;
+            float e = eO + eDiff * time;
+            float w = wO + wDiff * time;
+            float dist = distanceSquare(
+                tO, hO, cO, eO, wO,
+                t, h, -1, e, w);
+            if (dist < distance) {
+                distance = dist;
+            }
         }
 
         if (eDiff > 0) {
-            float time = (1 - eOriginal) / eDiff;
-            float t = tOriginal + tDiff * time;
-            float h = hOriginal + hDiff * time;
-            float c = cOriginal + cDiff * time;
-            float w = wOriginal + wDiff * time;
-            distance = Math.min(distance, distanceSquare(
-                    tOriginal, hOriginal, cOriginal, eOriginal, wOriginal,
-                    ts, hs, cs, es, ws,
-                    t, h, c, 1, w));
+            float time = (1 - eO) / eDiff;
+            float t = tO + tDiff * time;
+            float h = hO + hDiff * time;
+            float c = cO + cDiff * time;
+            float w = wO + wDiff * time;
+            float dist = distanceSquare(
+                tO, hO, cO, eO, wO,
+                t, h, c, 1, w);
+            if (dist < distance) {
+                distance = dist;
+            }
         } else if (eDiff < 0) {
-            float time = eOriginal / eDiff;
-            float t = tOriginal + tDiff * time;
-            float h = hOriginal + hDiff * time;
-            float c = cOriginal + cDiff * time;
-            float w = wOriginal + wDiff * time;
-            distance = Math.min(distance, distanceSquare(
-                    tOriginal, hOriginal, cOriginal, eOriginal, wOriginal,
-                    ts, hs, cs, es, ws,
-                    t, h, c, -1, w));
+            float time = (1 + eO) / eDiff;
+            float t = tO + tDiff * time;
+            float h = hO + hDiff * time;
+            float c = cO + cDiff * time;
+            float w = wO + wDiff * time;
+            float dist = distanceSquare(
+                tO, hO, cO, eO, wO,
+                t, h, c, -1, w);
+            if (dist < distance) {
+                distance = dist;
+            }
         }
 
         if (wDiff > 0) {
-            float time = (1 - wOriginal) / wDiff;
-            float t = tOriginal + tDiff * time;
-            float h = hOriginal + hDiff * time;
-            float c = cOriginal + cDiff * time;
-            float e = eOriginal + eDiff * time;
-            distance = Math.min(distance, distanceSquare(
-                    tOriginal, hOriginal, cOriginal, eOriginal, wOriginal,
-                    ts, hs, cs, es, ws,
-                    t, h, c, e, 1));
+            float time = (1 - wO) / wDiff;
+            float t = tO + tDiff * time;
+            float h = hO + hDiff * time;
+            float c = cO + cDiff * time;
+            float e = eO + eDiff * time;
+            float dist = distanceSquare(
+                tO, hO, cO, eO, wO,
+                t, h, c, e, 1);
+            if (dist < distance) {
+                distance = dist;
+            }
         } else if (wDiff < 0) {
-            float time = wOriginal / wDiff;
-            float t = tOriginal + tDiff * time;
-            float h = hOriginal + hDiff * time;
-            float c = cOriginal + cDiff * time;
-            float e = eOriginal + eDiff * time;
-            distance = Math.min(distance, distanceSquare(
-                    tOriginal, hOriginal, cOriginal, eOriginal, wOriginal,
-                    ts, hs, cs, es, ws,
-                    t, h, c, e, -1));
+            float time = (1 + wO) / wDiff;
+            float t = tO + tDiff * time;
+            float h = hO + hDiff * time;
+            float c = cO + cDiff * time;
+            float e = eO + eDiff * time;
+            float dist = distanceSquare(
+                tO, hO, cO, eO, wO,
+                t, h, c, e, -1);
+            if (dist < distance) {
+                distance = dist;
+            }
         }
 
-        if (distance > 12) {
-            return distanceToEdge(
-                    tOriginal, hOriginal, cOriginal, eOriginal, wOriginal,
-                    ts, hs, cs, es, ws
-            );
+        if (distance == Float.MAX_VALUE) {
+            return 0;
         }
 
-        return Mth.sqrt(distance);
+        float euDistanceToEdge = Mth.sqrt(distance);
+
+        float euDistanceToCenter = Mth.sqrt(distanceSquare(
+            tO, hO, cO, eO, wO,
+            tC, hC, cC, eC, wC
+        ));
+
+        return euDistanceToCenter / (euDistanceToEdge + euDistanceToCenter);
     }
 
     private static float distanceSquare(
-            float t1, float h1, float c1, float e1, float w1,
-            float ts, float hs, float cs, float es, float ws,
-            float t2, float h2, float c2, float e2, float w2
+        float t1, float h1, float c1, float e1, float w1,
+        float t2, float h2, float c2, float e2, float w2
     ) {
-        return Mth.square(t1 - t2) / ts + Mth.square(h1 - h2) / hs + Mth.square(c1 - c2) / cs + Mth.square(e1 - e2) / es + Mth.square(w1 - w2) / ws;
+        return Mth.square(t1 - t2)
+            + Mth.square(h1 - h2)
+            + Mth.square(c1 - c2)
+            + Mth.square(e1 - e2)
+            + Mth.square(w1 - w2);
     }
 
     public float volume() {
-        return volume;
+        return relativeVolume;
+    }
+
+    @Override
+    public String toString() {
+        return "TargetTransformer{" +
+            "temperatureCenter=" + temperatureCenter +
+            ", humidityCenter=" + humidityCenter +
+            ", continentalnessCenter=" + continentalnessCenter +
+            ", erosionCenter=" + erosionCenter +
+            ", weirdnessCenter=" + weirdnessCenter +
+            ", depthStart=" + depthStart +
+            ", depthEnd=" + depthEnd +
+            ", spread=" + relativeSpread +
+            '}';
     }
 }
