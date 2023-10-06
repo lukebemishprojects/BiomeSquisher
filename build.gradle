@@ -52,6 +52,21 @@ processTestResources {
     }
 }
 
+tasks.register('testJar', Jar) {
+    from(sourceSets.test.output)
+    it.archiveClassifier.set 'test-dev'
+}
+
+import net.fabricmc.loom.task.RemapJarTask
+
+tasks.register('remapTestJar', RemapJarTask) {
+    it.targetNamespace = "intermediary"
+    it.inputFile = tasks.testJar.archiveFile
+    it.dependsOn tasks.testJar
+    it.archiveClassifier.set 'test'
+    it.addNestedDependencies = false
+}
+
 tasks.withType(JavaCompile).configureEach {
     it.options.release = 17
 }

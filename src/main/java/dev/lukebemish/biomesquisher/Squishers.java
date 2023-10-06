@@ -11,18 +11,26 @@ import java.util.List;
 import java.util.stream.Stream;
 
 public class Squishers {
-    private float cummulativeVolume = 1;
-    private static final float MAX_VOLUME = (float) Math.pow(2, 6);
-    private final List<Pair<TargetTransformer, Holder<Biome>>> transformers = new ArrayList<>();
+    private float relativeVolume = 1;
+    private final List<Pair<Injection, Holder<Biome>>> injections = new ArrayList<>();
 
-    public void add(Pair<TargetTransformer, Holder<Biome>> pair) {
-        var transformer = pair.getFirst();
-        cummulativeVolume += transformer.volume() / MAX_VOLUME;
-        transformers.add(Pair.of(transformer.scale(cummulativeVolume), pair.getSecond()));
+    public void add(Injection injection, Holder<Biome> biomeHolder, Relative.Series relatives) {
+        if (!injections.isEmpty()) {
+            injection = injection.remap(p -> reverse(p, relatives));
+        }
+        relativeVolume += injection.relativeVolume();
+        injections.add(0, Pair.of(injection.scale(relativeVolume), biomeHolder));
+    }
+
+    public Climate.TargetPoint reverse(Climate.TargetPoint target, Relative.Series relatives) {
+        for (int i = injections.size() - 1; i >= 0; i--) {
+            target = injections.get(i).getFirst().unsquish(target, relatives);
+        }
+        return target;
     }
 
     public Either<Climate.TargetPoint, Holder<Biome>> apply(Climate.TargetPoint target) {
-        for (var pair : transformers) {
+        for (var pair : injections) {
             target = pair.getFirst().squish(target);
             if (target == null) {
                 return Either.right(pair.getSecond());
@@ -32,13 +40,13 @@ public class Squishers {
     }
 
     public Stream<Holder<Biome>> possibleBiomes() {
-        return transformers.stream().map(Pair::getSecond);
+        return injections.stream().map(Pair::getSecond);
     }
 
     @Override
     public String toString() {
         return "Squishers{" +
-            "transformers=" + transformers +
+            "injections=" + injections +
             '}';
     }
 }
