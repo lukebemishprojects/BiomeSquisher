@@ -3,7 +3,7 @@ package dev.lukebemish.biomesquisher;
 import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.Nullable;
 
-public sealed interface DimensionBehaviour<T extends DimensionBehaviour<T>> {
+public sealed interface DimensionBehaviour {
     @Contract(pure = true)
     default @Nullable Range asRange() {
         return null;
@@ -14,11 +14,9 @@ public sealed interface DimensionBehaviour<T extends DimensionBehaviour<T>> {
         return null;
     }
 
-    T self();
-
     float center();
 
-    final class Range implements DimensionBehaviour<Range> {
+    final class Range implements DimensionBehaviour {
         private final float min;
         private final float max;
 
@@ -37,11 +35,6 @@ public sealed interface DimensionBehaviour<T extends DimensionBehaviour<T>> {
         }
 
         @Override
-        public Range self() {
-            return this;
-        }
-
-        @Override
         public float center() {
             return (min + max) / 2f;
         }
@@ -55,7 +48,7 @@ public sealed interface DimensionBehaviour<T extends DimensionBehaviour<T>> {
         }
     }
 
-    final class Squish implements DimensionBehaviour<Squish> {
+    final class Squish implements DimensionBehaviour {
         private final float position;
 
         public Squish(float position) {
@@ -66,11 +59,6 @@ public sealed interface DimensionBehaviour<T extends DimensionBehaviour<T>> {
 
         @Override
         public Squish asSquish() {
-            return this;
-        }
-
-        @Override
-        public Squish self() {
             return this;
         }
 

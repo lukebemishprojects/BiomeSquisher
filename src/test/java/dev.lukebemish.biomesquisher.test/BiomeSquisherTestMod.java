@@ -42,6 +42,25 @@ public class BiomeSquisherTestMod implements ModInitializer {
                 squishers.add(
                     new Injection(
                         new DimensionBehaviour.Squish(0.2f),
+                        new DimensionBehaviour.Squish(-0.6f),
+                        new DimensionBehaviour.Range(0.5f, 1.0f),
+                        new DimensionBehaviour.Squish(-0.3f),
+                        new DimensionBehaviour.Range(-0.6f, 0f),
+                        new DimensionBehaviour.Squish(0.2f),
+                        0.1f
+                    ),
+                    registryAccess.registry(Registries.BIOME).orElseThrow().getHolderOrThrow(Biomes.CRIMSON_FOREST),
+                    new Relative.Series(List.of(new Relative(
+                        Relative.Position.START,
+                        Relative.Position.START,
+                        Relative.Position.START,
+                        Relative.Position.START
+                    )))
+                );
+
+                squishers.add(
+                    new Injection(
+                        new DimensionBehaviour.Squish(0.2f),
                         new DimensionBehaviour.Squish(0.2f),
                         new DimensionBehaviour.Range(0.5f, 1.0f),
                         new DimensionBehaviour.Squish(-0.3f),
@@ -68,13 +87,13 @@ public class BiomeSquisherTestMod implements ModInitializer {
 
                 squishers.add(
                     new Injection(
-                        new DimensionBehaviour.Squish(0.2f),
-                        new DimensionBehaviour.Squish(-0.6f),
+                        new DimensionBehaviour.Squish(1.0f),
+                        new DimensionBehaviour.Squish(0.1f),
                         new DimensionBehaviour.Range(0.5f, 1.0f),
                         new DimensionBehaviour.Squish(-0.3f),
                         new DimensionBehaviour.Range(-0.6f, 0f),
                         new DimensionBehaviour.Squish(0.2f),
-                        0.1f
+                        0.15f
                     ),
                     registryAccess.registry(Registries.BIOME).orElseThrow().getHolderOrThrow(Biomes.CRIMSON_FOREST),
                     new Relative.Series(List.of(new Relative(

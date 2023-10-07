@@ -92,6 +92,34 @@ public final class Injection {
         }
     }
 
+    public DimensionBehaviour temperature() {
+        return temperature;
+    }
+
+    public DimensionBehaviour humidity() {
+        return humidity;
+    }
+
+    public DimensionBehaviour.Range continentalness() {
+        return continentalness;
+    }
+
+    public DimensionBehaviour erosion() {
+        return erosion;
+    }
+
+    public DimensionBehaviour.Range depth() {
+        return depth;
+    }
+
+    public DimensionBehaviour weirdness() {
+        return weirdness;
+    }
+
+    public float radius() {
+        return radius;
+    }
+
     public @NotNull Climate.TargetPoint unsquish(Climate.TargetPoint initial, Relative.Series relatives) {
         float[] thePoint = new float[] {
             Climate.unquantizeCoord(initial.temperature()),
@@ -416,18 +444,6 @@ public final class Injection {
         return sum;
     }
 
-    float relativeVolume() {
-        float relativeVolume = 1;
-        for (int i = 0; i < squishCount; i++) {
-            relativeVolume *= radius;
-        }
-        for (int i = 0; i < rangeCount; i++) {
-            DimensionBehaviour.Range range = Objects.requireNonNull(behaviours[rangeIndices[i]].asRange());
-            relativeVolume *= (range.max() - range.min()) / 2;
-        }
-        return relativeVolume;
-    }
-
     Injection scale(float totalVolume) {
         return new Injection(
             temperature,
@@ -460,12 +476,12 @@ public final class Injection {
         }
         Climate.TargetPoint centerClimate = climateOf(center);
         Climate.TargetPoint remappedCenterClimate = operator.apply(centerClimate);
-        DimensionBehaviour<?> temperature;
-        DimensionBehaviour<?> humidity;
+        DimensionBehaviour temperature;
+        DimensionBehaviour humidity;
         DimensionBehaviour.Range continentalness = this.continentalness;
-        DimensionBehaviour<?> erosion;
+        DimensionBehaviour erosion;
         DimensionBehaviour.Range depth = this.depth;
-        DimensionBehaviour<?> weirdness;
+        DimensionBehaviour weirdness;
         if (this.temperature.asSquish() != null) {
             temperature = new DimensionBehaviour.Squish(Climate.unquantizeCoord(remappedCenterClimate.temperature()));
         } else {

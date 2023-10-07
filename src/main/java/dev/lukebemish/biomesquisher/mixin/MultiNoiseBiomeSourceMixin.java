@@ -1,6 +1,7 @@
 package dev.lukebemish.biomesquisher.mixin;
 
 import com.llamalad7.mixinextras.injector.ModifyReturnValue;
+import dev.lukebemish.biomesquisher.Squishers;
 import dev.lukebemish.biomesquisher.injected.Squishable;
 import net.minecraft.core.Holder;
 import net.minecraft.world.level.biome.Biome;
@@ -18,6 +19,10 @@ public class MultiNoiseBiomeSourceMixin {
         at = @At("RETURN")
     )
     private Stream<Holder<Biome>> biomesquisher_wrapBiomes(Stream<Holder<Biome>> biomes) {
-        return Stream.concat(biomes, ((Squishable) ((MultiNoiseBiomeSourceAccessor) this).biomesquisher_parameters()).biomesquisher_squishers().possibleBiomes());
+        Squishers squishers = ((Squishable) ((MultiNoiseBiomeSourceAccessor) this).biomesquisher_parameters()).biomesquisher_squishers();
+        if (squishers == null) {
+            return biomes;
+        }
+        return Stream.concat(biomes, squishers.possibleBiomes());
     }
 }
