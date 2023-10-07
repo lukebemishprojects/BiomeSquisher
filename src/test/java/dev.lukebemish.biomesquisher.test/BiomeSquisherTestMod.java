@@ -11,8 +11,6 @@ import net.minecraft.world.level.dimension.LevelStem;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-import java.util.List;
-
 public class BiomeSquisherTestMod implements ModInitializer {
     public static final Logger LOGGER = LogManager.getLogger("BiomeSquisherTestMod");
 
@@ -31,12 +29,8 @@ public class BiomeSquisherTestMod implements ModInitializer {
                         0.1f
                     ),
                     registryAccess.registry(Registries.BIOME).orElseThrow().getHolderOrThrow(Biomes.WARPED_FOREST),
-                    new Relative.Series(List.of(new Relative(
-                        Relative.Position.START,
-                        Relative.Position.START,
-                        Relative.Position.START,
-                        Relative.Position.START
-                    )))
+                    Relative.DEFAULT,
+                    true
                 );
 
                 squishers.add(
@@ -50,12 +44,8 @@ public class BiomeSquisherTestMod implements ModInitializer {
                         0.1f
                     ),
                     registryAccess.registry(Registries.BIOME).orElseThrow().getHolderOrThrow(Biomes.CRIMSON_FOREST),
-                    new Relative.Series(List.of(new Relative(
-                        Relative.Position.START,
-                        Relative.Position.START,
-                        Relative.Position.START,
-                        Relative.Position.START
-                    )))
+                    Relative.DEFAULT,
+                    true
                 );
 
                 squishers.add(
@@ -69,20 +59,8 @@ public class BiomeSquisherTestMod implements ModInitializer {
                         0.1f
                     ),
                     registryAccess.registry(Registries.BIOME).orElseThrow().getHolderOrThrow(Biomes.SOUL_SAND_VALLEY),
-                    new Relative.Series(List.of(
-                        new Relative(
-                            Relative.Position.START,
-                            Relative.Position.CENTER,
-                            Relative.Position.CENTER,
-                            Relative.Position.CENTER
-                        ),
-                        new Relative(
-                            Relative.Position.CENTER,
-                            Relative.Position.START,
-                            Relative.Position.START,
-                            Relative.Position.START
-                        )
-                    ))
+                    Relative.DEFAULT,
+                    true
                 );
 
                 squishers.add(
@@ -96,12 +74,8 @@ public class BiomeSquisherTestMod implements ModInitializer {
                         0.15f
                     ),
                     registryAccess.registry(Registries.BIOME).orElseThrow().getHolderOrThrow(Biomes.CRIMSON_FOREST),
-                    new Relative.Series(List.of(new Relative(
-                        Relative.Position.START,
-                        Relative.Position.START,
-                        Relative.Position.START,
-                        Relative.Position.START
-                    )))
+                    Relative.DEFAULT,
+                    true
                 );
             }
         });

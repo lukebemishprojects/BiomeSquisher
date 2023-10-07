@@ -27,7 +27,8 @@ public class ParameterListMixin implements Squishable {
 
     @Override
     public void biomesquisher_squish(ResourceKey<LevelStem> key, RegistryAccess access) {
-        Squishers squishers = new Squishers();
+        //noinspection DataFlowIssue
+        Squishers squishers = new Squishers((Climate.ParameterList<?>) (Object) this);
         SquisherCollectionCallback.EVENT.invoker().collect(key, squishers, access);
         this.squishers = squishers;
     }

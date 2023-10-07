@@ -120,14 +120,18 @@ public final class Injection {
         return radius;
     }
 
+    private static float unquantizeAndClamp(long coord) {
+        return Mth.clamp(Climate.unquantizeCoord(coord), -1, 1);
+    }
+
     public @NotNull Climate.TargetPoint unsquish(Climate.TargetPoint initial, Relative.Series relatives) {
         float[] thePoint = new float[] {
-            Climate.unquantizeCoord(initial.temperature()),
-            Climate.unquantizeCoord(initial.humidity()),
-            Climate.unquantizeCoord(initial.continentalness()),
-            Climate.unquantizeCoord(initial.erosion()),
-            Climate.unquantizeCoord(initial.depth()),
-            Climate.unquantizeCoord(initial.weirdness())
+            unquantizeAndClamp(initial.temperature()),
+            unquantizeAndClamp(initial.humidity()),
+            unquantizeAndClamp(initial.continentalness()),
+            unquantizeAndClamp(initial.erosion()),
+            unquantizeAndClamp(initial.depth()),
+            unquantizeAndClamp(initial.weirdness())
         };
 
         float[] toUnsquish = new float[squishCount];
@@ -207,9 +211,9 @@ public final class Injection {
             float p = thePoint[rangeIndices[i]];
             DimensionBehaviour.Range range = Objects.requireNonNull(behaviours[rangeIndices[i]].asRange());
             if (p < range.min()) {
-                multiplier *= (p + 1) / (range.min() + 1);
+                multiplier *= (p + 1) / Math.min(range.min() + 1, radius);
             } else if (p > range.max()) {
-                multiplier *= (1 - p) / (1 - range.max());
+                multiplier *= (1 - p) / Math.min(1 - range.max(), radius);
             }
         }
 
@@ -309,12 +313,12 @@ public final class Injection {
 
     public @Nullable Climate.TargetPoint squish(Climate.TargetPoint initial) {
         float[] thePoint = new float[] {
-            Climate.unquantizeCoord(initial.temperature()),
-            Climate.unquantizeCoord(initial.humidity()),
-            Climate.unquantizeCoord(initial.continentalness()),
-            Climate.unquantizeCoord(initial.erosion()),
-            Climate.unquantizeCoord(initial.depth()),
-            Climate.unquantizeCoord(initial.weirdness())
+            unquantizeAndClamp(initial.temperature()),
+            unquantizeAndClamp(initial.humidity()),
+            unquantizeAndClamp(initial.continentalness()),
+            unquantizeAndClamp(initial.erosion()),
+            unquantizeAndClamp(initial.depth()),
+            unquantizeAndClamp(initial.weirdness())
         };
 
         float[] toSquish = new float[squishCount];
@@ -389,9 +393,9 @@ public final class Injection {
             float p = thePoint[rangeIndices[i]];
             DimensionBehaviour.Range range = Objects.requireNonNull(behaviours[rangeIndices[i]].asRange());
             if (p < range.min()) {
-                multiplier *= (p + 1) / (range.min() + 1);
+                multiplier *= (p + 1) / Math.min(range.min() + 1, radius);
             } else if (p > range.max()) {
-                multiplier *= (1 - p) / (1 - range.max());
+                multiplier *= (1 - p) / Math.min(1 - range.max(), radius);
             }
         }
 
@@ -483,7 +487,7 @@ public final class Injection {
         DimensionBehaviour.Range depth = this.depth;
         DimensionBehaviour weirdness;
         if (this.temperature.asSquish() != null) {
-            temperature = new DimensionBehaviour.Squish(Climate.unquantizeCoord(remappedCenterClimate.temperature()));
+            temperature = new DimensionBehaviour.Squish(unquantizeAndClamp(remappedCenterClimate.temperature()));
         } else {
             float centerTemperature = center[0];
             @NotNull DimensionBehaviour.Range range = Objects.requireNonNull(this.temperature.asRange());
@@ -495,12 +499,12 @@ public final class Injection {
             long minTemperature = minTemperatureClimate.temperature();
             center[0] = centerTemperature;
             temperature = new DimensionBehaviour.Range(
-                Climate.unquantizeCoord(minTemperature),
-                Climate.unquantizeCoord(maxTemperature)
+                unquantizeAndClamp(minTemperature),
+                unquantizeAndClamp(maxTemperature)
             );
         }
         if (this.humidity.asSquish() != null) {
-            humidity = new DimensionBehaviour.Squish(Climate.unquantizeCoord(remappedCenterClimate.humidity()));
+            humidity = new DimensionBehaviour.Squish(unquantizeAndClamp(remappedCenterClimate.humidity()));
         } else {
             float centerHumidity = center[1];
             @NotNull DimensionBehaviour.Range range = Objects.requireNonNull(this.humidity.asRange());
@@ -512,12 +516,12 @@ public final class Injection {
             long minHumidity = minHumidityClimate.humidity();
             center[1] = centerHumidity;
             humidity = new DimensionBehaviour.Range(
-                Climate.unquantizeCoord(minHumidity),
-                Climate.unquantizeCoord(maxHumidity)
+                unquantizeAndClamp(minHumidity),
+                unquantizeAndClamp(maxHumidity)
             );
         }
         if (this.erosion.asSquish() != null) {
-            erosion = new DimensionBehaviour.Squish(Climate.unquantizeCoord(remappedCenterClimate.erosion()));
+            erosion = new DimensionBehaviour.Squish(unquantizeAndClamp(remappedCenterClimate.erosion()));
         } else {
             float centerErosion = center[3];
             @NotNull DimensionBehaviour.Range range = Objects.requireNonNull(this.erosion.asRange());
@@ -529,12 +533,12 @@ public final class Injection {
             long minErosion = minErosionClimate.erosion();
             center[3] = centerErosion;
             erosion = new DimensionBehaviour.Range(
-                Climate.unquantizeCoord(minErosion),
-                Climate.unquantizeCoord(maxErosion)
+                unquantizeAndClamp(minErosion),
+                unquantizeAndClamp(maxErosion)
             );
         }
         if (this.weirdness.asSquish() != null) {
-            weirdness = new DimensionBehaviour.Squish(Climate.unquantizeCoord(remappedCenterClimate.weirdness()));
+            weirdness = new DimensionBehaviour.Squish(unquantizeAndClamp(remappedCenterClimate.weirdness()));
         } else {
             float centerWeirdness = center[5];
             @NotNull DimensionBehaviour.Range range = Objects.requireNonNull(this.weirdness.asRange());
@@ -546,8 +550,8 @@ public final class Injection {
             long minWeirdness = minWeirdnessClimate.weirdness();
             center[5] = centerWeirdness;
             weirdness = new DimensionBehaviour.Range(
-                Climate.unquantizeCoord(minWeirdness),
-                Climate.unquantizeCoord(maxWeirdness)
+                unquantizeAndClamp(minWeirdness),
+                unquantizeAndClamp(maxWeirdness)
             );
         }
         return new Injection(

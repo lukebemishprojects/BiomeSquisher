@@ -132,4 +132,31 @@ public final class Relative {
             return relatives;
         }
     }
+
+    public static final Relative.Series DEFAULT = new Relative.Series(List.of(
+        new Relative(
+            Position.START,
+            Position.CENTER,
+            Position.CENTER,
+            Position.CENTER
+        ),
+        new Relative(
+            Position.CENTER,
+            Position.START,
+            Position.CENTER,
+            Position.CENTER
+        ),
+        new Relative(
+            Position.CENTER,
+            Position.CENTER,
+            Position.START,
+            Position.CENTER
+        ),
+        new Relative(
+            Position.CENTER,
+            Position.CENTER,
+            Position.CENTER,
+            Position.START
+        )
+    ));
 }

@@ -11,7 +11,10 @@ import net.minecraft.world.level.levelgen.DensityFunctions;
 import net.minecraft.world.level.levelgen.NoiseRouter;
 
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Comparator;
 import java.util.List;
+import java.util.function.Consumer;
 import java.util.stream.Stream;
 
 public class Squishers {
@@ -22,7 +25,153 @@ public class Squishers {
 
     private final List<Pair<Injection, Holder<Biome>>> injections = new ArrayList<>();
 
-    public void add(Injection injection, Holder<Biome> biomeHolder, Relative.Series relatives) {
+    private final Climate.ParameterList<?> parameterList;
+
+    public Squishers(Climate.ParameterList<?> parameterList) {
+        this.parameterList = parameterList;
+    }
+
+    private Injection click(Injection injection) {
+        List<Pair<long[], Double>> candidates = new ArrayList<>();
+        int dimensionCount = 0;
+        int temperature = -1;
+        int humidity = -1;
+        int erosion = -1;
+        int weirdness = -1;
+        long[] initial = new long[4];
+        Dimension[] dimensions = new Dimension[4];
+        if (injection.temperature().asSquish() != null) {
+            temperature = dimensionCount;
+            dimensionCount++;
+            initial[temperature] = Climate.quantizeCoord(injection.temperature().asSquish().center());
+            dimensions[temperature] = Dimension.TEMPERATURE;
+        }
+        if (injection.humidity().asSquish() != null) {
+            humidity = dimensionCount;
+            dimensionCount++;
+            initial[humidity] = Climate.quantizeCoord(injection.humidity().asSquish().center());
+            dimensions[humidity] = Dimension.HUMIDITY;
+        }
+        if (injection.erosion().asSquish() != null) {
+            erosion = dimensionCount;
+            dimensionCount++;
+            initial[erosion] = Climate.quantizeCoord(injection.erosion().asSquish().center());
+            dimensions[erosion] = Dimension.EROSION;
+        }
+        if (injection.weirdness().asSquish() != null) {
+            weirdness = dimensionCount;
+            dimensionCount++;
+            initial[weirdness] = Climate.quantizeCoord(injection.weirdness().asSquish().center());
+            dimensions[weirdness] = Dimension.WEIRDNESS;
+        }
+        outer:
+        for (var pair : parameterList.values()) {
+            var climatePoint = pair.getFirst();
+            double currentDistance = 0;
+            for (int i = 0; i < dimensionCount; i++) {
+                if (
+                    Math.abs(initial[i] - dimensions[i].fromParameterPoint(climatePoint).min()) <= injection.radius() ||
+                    Math.abs(initial[i] - dimensions[i].fromParameterPoint(climatePoint).max()) <= injection.radius() ||
+                    (initial[i] <= dimensions[i].fromParameterPoint(climatePoint).max() && initial[i] >= dimensions[i].fromParameterPoint(climatePoint).min())
+                ) {
+                    continue;
+                }
+                continue outer;
+            }
+            long[] current = new long[] {
+                Long.MAX_VALUE,
+                Long.MAX_VALUE,
+                Long.MAX_VALUE,
+                Long.MAX_VALUE
+            };
+            for (int i = 0; i < dimensionCount; i++) {
+                findCorners(initial, dimensions, i, dimensionCount, candidates::add, current, Climate.quantizeCoord(injection.radius()), climatePoint);
+            }
+        }
+        candidates.sort(CORNER_COMPARATOR);
+        if (candidates.isEmpty()) {
+            return injection;
+        }
+        long[] center = candidates.get(0).getFirst();
+        DimensionBehaviour[] behaviours = new DimensionBehaviour[dimensionCount];
+        for (int i = 0; i < dimensionCount; i++) {
+            if (center[i] != Long.MAX_VALUE) {
+                behaviours[i] = new DimensionBehaviour.Squish(Climate.unquantizeCoord(center[i]));
+            }
+        }
+        DimensionBehaviour temperatureOut = temperature == -1 ? injection.temperature() : (behaviours[temperature] == null ? injection.temperature() : behaviours[temperature]);
+        DimensionBehaviour humidityOut = humidity == -1 ? injection.humidity() : (behaviours[humidity] == null ? injection.humidity() : behaviours[humidity]);
+        DimensionBehaviour erosionOut = erosion == -1 ? injection.erosion() : (behaviours[erosion] == null ? injection.erosion() : behaviours[erosion]);
+        DimensionBehaviour weirdnessOut = weirdness == -1 ? injection.weirdness() : (behaviours[weirdness] == null ? injection.weirdness() : behaviours[weirdness]);
+
+        return new Injection(
+            temperatureOut,
+            humidityOut,
+            injection.continentalness(),
+            erosionOut,
+            injection.depth(),
+            weirdnessOut,
+            injection.radius()
+        );
+    }
+
+    private static final Comparator<Pair<long[], Double>> CORNER_COMPARATOR = (o1, o2) -> {
+        int count1 = 0;
+        int count2 = 0;
+        for (int i = 0; i < o1.getFirst().length; i++) {
+            if (o1.getFirst()[i] != Long.MAX_VALUE) {
+                count1++;
+            }
+            if (o2.getFirst()[i] != Long.MAX_VALUE) {
+                count2++;
+            }
+        }
+        if (count1 != count2) {
+            return -Integer.compare(count1, count2);
+        }
+        return Double.compare(o1.getSecond(), o2.getSecond());
+    };
+
+    private static void findCorners(long[] initial, Dimension[] dimensions, int currentDimension, int dimensionCount, Consumer<Pair<long[], Double>> consumer, long[] current, long radius, Climate.ParameterPoint parameterPoint) {
+        long start = dimensions[currentDimension].fromParameterPoint(parameterPoint).min();
+        long end = dimensions[currentDimension].fromParameterPoint(parameterPoint).max();
+        long center = initial[currentDimension];
+        if (Math.abs(center - start) <= radius) {
+            current[currentDimension] = start;
+            consumer.accept(Pair.of(Arrays.copyOf(current, dimensionCount), cornerDistance(initial, current)));
+            if (currentDimension != dimensionCount - 1) {
+                for (int i = currentDimension + 1; i < dimensionCount; i++) {
+                    findCorners(initial, dimensions, i, dimensionCount, consumer, current, radius, parameterPoint);
+                }
+            }
+        }
+        if (Math.abs(center - end) <= radius) {
+            current[currentDimension] = end;
+            consumer.accept(Pair.of(Arrays.copyOf(current, dimensionCount), cornerDistance(initial, current)));
+            if (currentDimension != dimensionCount - 1) {
+                for (int i = currentDimension + 1; i < dimensionCount; i++) {
+                    findCorners(initial, dimensions, i, dimensionCount, consumer, current, radius, parameterPoint);
+                }
+            }
+        }
+        current[currentDimension] = Long.MAX_VALUE;
+    }
+
+    private static double cornerDistance(long[] initial, long[] corner) {
+        double distance = 0;
+        for (int i = 0; i < initial.length; i++) {
+            if (initial[i] == Long.MAX_VALUE || corner[i] == Long.MAX_VALUE) {
+                break;
+            }
+            distance += Math.pow(initial[i] - corner[i], 2);
+        }
+        return Math.sqrt(distance);
+    }
+
+    public void add(Injection injection, Holder<Biome> biomeHolder, Relative.Series relatives, boolean click) {
+        if (click) {
+            injection = click(injection);
+        }
         injection = injection.remap(p -> reverse(p, relatives));
         boolean isTemperature = injection.temperature().asSquish() != null;
         boolean isHumidity = injection.humidity().asSquish() != null;
@@ -82,10 +231,6 @@ public class Squishers {
         var humidity = relativeSizeHumidity == 1 ? router.vegetation() : wrapHolderHolder(scaledOrElse(unwrapHolderHolder(router.vegetation()), Mth.sqrt(relativeSizeHumidity)));
         var erosion = relativeSizeErosion == 1 ? router.erosion() : wrapHolderHolder(scaledOrElse(unwrapHolderHolder(router.erosion()), Mth.sqrt(relativeSizeErosion)));
         var weirdness = relativeSizeWeirdness == 1 ? router.ridges() : wrapHolderHolder(scaledOrElse(unwrapHolderHolder(router.ridges()), Mth.sqrt(relativeSizeWeirdness)));
-        System.out.println("Temperature: " + temperature);
-        System.out.println("Humidity: " + humidity);
-        System.out.println("Erosion: " + erosion);
-        System.out.println("Weirdness: " + weirdness);
         return new NoiseRouter(
             router.barrierNoise(),
             router.fluidLevelFloodednessNoise(),
