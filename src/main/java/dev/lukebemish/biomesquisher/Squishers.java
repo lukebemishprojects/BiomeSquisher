@@ -15,9 +15,7 @@ public class Squishers {
     private final List<Pair<Injection, Holder<Biome>>> injections = new ArrayList<>();
 
     public void add(Injection injection, Holder<Biome> biomeHolder, Relative.Series relatives) {
-        if (!injections.isEmpty()) {
-            injection = injection.remap(p -> reverse(p, relatives));
-        }
+        injection = injection.remap(p -> reverse(p, relatives));
         relativeVolume += injection.relativeVolume();
         injections.add(0, Pair.of(injection.scale(relativeVolume), biomeHolder));
     }
