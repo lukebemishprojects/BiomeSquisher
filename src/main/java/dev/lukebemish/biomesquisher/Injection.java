@@ -173,59 +173,79 @@ public final class Injection {
             }
         }
 
+        float multiplier = 1;
+
+        for (int i = 0; i < rangeCount; i++) {
+            float p = thePoint[rangeIndices[i]];
+            DimensionBehaviour.Range range = Objects.requireNonNull(behaviours[rangeIndices[i]].asRange());
+            if (p < range.min()) {
+                multiplier *= (p + 1) / (range.min() + 1);
+            } else if (p > range.max()) {
+                multiplier *= (1 - p) / (1 - range.max());
+            }
+        }
+
         float distSquare = Float.MAX_VALUE;
         for (int i = 0; i < squishCount; i++) {
             float diff = diffs[i];
             if (diff < 0) {
+                float time = (toUnsquish[i] - 1) / diff;
+                float[] scaled = new float[squishCount];
+                for (int j = 0; j < squishCount; j++) {
+                    if (j == i) {
+                        scaled[j] = 1;
+                    } else {
+                        scaled[j] = toUnsquish[j] - diffs[j] * time;
+                    }
+                }
+                distSquare = Math.min(distSquare, distanceSquare(toUnsquishCenters, scaled));
+            } else if (diff > 0) {
                 float time = (1 + toUnsquish[i]) / diff;
                 float[] scaled = new float[squishCount];
                 for (int j = 0; j < squishCount; j++) {
                     if (j == i) {
                         scaled[j] = -1;
                     } else {
-                        scaled[j] = toUnsquish[j] + diffs[j] * time;
+                        scaled[j] = toUnsquish[j] - diffs[j] * time;
                     }
                 }
-                distSquare = Math.min(distSquare, distanceSquare(toUnsquish, scaled));
-            } else if (diff > 0) {
-                float time = (1 - toUnsquish[i]) / diff;
-                float[] scaled = new float[squishCount];
-                for (int j = 0; j < squishCount; j++) {
-                    if (j == i) {
-                        scaled[j] = 1;
-                    } else {
-                        scaled[j] = toUnsquish[j] + diffs[j] * time;
-                    }
-                }
-                distSquare = Math.min(distSquare, distanceSquare(toUnsquish, scaled));
+                distSquare = Math.min(distSquare, distanceSquare(toUnsquishCenters, scaled));
             }
         }
 
         float relativeDistance;
+        float distanceToCenter = Mth.sqrt(distanceSquare(toUnsquish, toUnsquishCenters));
 
         if (distSquare == Float.MAX_VALUE) {
             relativeDistance = 0;
         } else {
-            float multiplier = 1;
+            float distanceTotal = Mth.sqrt(distSquare);
+            relativeDistance = distanceToCenter / distanceTotal;
+        }
 
-            for (int i = 0; i < rangeCount; i++) {
-                float p = thePoint[rangeIndices[i]];
-                DimensionBehaviour.Range range = Objects.requireNonNull(behaviours[rangeIndices[i]].asRange());
-                if (p < range.min()) {
-                    multiplier *= (p + 1) / (range.min() + 1);
-                } else if (p > range.max()) {
-                    multiplier *= (1 - p) / (1 - range.max());
-                }
+        if (multiplier == 0) {
+            return initial;
+        }
+
+        float smallRadius = radius * (1 - multiplier);
+
+        if (relativeDistance < smallRadius && relativeDistance != 0) {
+            // thePoint mutated below here
+
+            for (int i = 0; i < squishCount; i++) {
+                float diff = diffs[i];
+                thePoint[squishIndices[i]] = toUnsquishCenters[i] - diff / (1 - multiplier);
             }
 
-            float distanceToEdge = Mth.sqrt(distSquare);
-            float distanceToCenter = Mth.sqrt(distanceSquare(toUnsquish, toUnsquishCenters));
-            relativeDistance = distanceToCenter / (distanceToEdge + distanceToCenter);
-            relativeDistance = 1 - (1 - relativeDistance) / multiplier / multiplier;
+            return climateOf(thePoint);
         }
 
         double relativeVolume = Math.pow(radius, squishCount);
-        float finalDist = (float) Math.pow((1 - relativeVolume)*Math.pow(relativeDistance, squishCount) + relativeVolume, 1.0 / squishCount);
+        double relativeSmallVolume = Math.pow(smallRadius, squishCount);
+        float finalDist = (float) Math.pow(
+            (1 - relativeVolume) * (Math.pow(relativeDistance, squishCount) - relativeSmallVolume) / (1 - relativeSmallVolume) + relativeVolume,
+            1.0 / squishCount
+        );
 
         if (relativeDistance == 0) {
             float[] direction = subtract(relativeEdge, toUnsquishCenters);
@@ -285,27 +305,27 @@ public final class Injection {
         for (int i = 0; i < squishCount; i++) {
             float diff = diffs[i];
             if (diff < 0) {
+                float time = (toSquish[i] - 1) / diff;
+                float[] scaled = new float[squishCount];
+                for (int j = 0; j < squishCount; j++) {
+                    if (j == i) {
+                        scaled[j] = 1;
+                    } else {
+                        scaled[j] = toSquish[j] - diffs[j] * time;
+                    }
+                }
+                distSquare = Math.min(distSquare, distanceSquare(toSquishCenters, scaled));
+            } else if (diff > 0) {
                 float time = (1 + toSquish[i]) / diff;
                 float[] scaled = new float[squishCount];
                 for (int j = 0; j < squishCount; j++) {
                     if (j == i) {
                         scaled[j] = -1;
                     } else {
-                        scaled[j] = toSquish[j] + diffs[j] * time;
+                        scaled[j] = toSquish[j] - diffs[j] * time;
                     }
                 }
-                distSquare = Math.min(distSquare, distanceSquare(toSquish, scaled));
-            } else if (diff > 0) {
-                float time = (1 - toSquish[i]) / diff;
-                float[] scaled = new float[squishCount];
-                for (int j = 0; j < squishCount; j++) {
-                    if (j == i) {
-                        scaled[j] = 1;
-                    } else {
-                        scaled[j] = toSquish[j] + diffs[j] * time;
-                    }
-                }
-                distSquare = Math.min(distSquare, distanceSquare(toSquish, scaled));
+                distSquare = Math.min(distSquare, distanceSquare(toSquishCenters, scaled));
             }
         }
 
@@ -314,22 +334,9 @@ public final class Injection {
         if (distSquare == Float.MAX_VALUE) {
             relativeDistance = 0;
         } else {
-            float multiplier = 1;
-
-            for (int i = 0; i < rangeCount; i++) {
-                float p = thePoint[rangeIndices[i]];
-                DimensionBehaviour.Range range = Objects.requireNonNull(behaviours[rangeIndices[i]].asRange());
-                if (p < range.min()) {
-                    multiplier *= (p + 1) / (range.min() + 1);
-                } else if (p > range.max()) {
-                    multiplier *= (1 - p) / (1 - range.max());
-                }
-            }
-
-            float distanceToEdge = Mth.sqrt(distSquare);
+            float distanceTotal = Mth.sqrt(distSquare);
             float distanceToCenter = Mth.sqrt(distanceSquare(toSquish, toSquishCenters));
-            relativeDistance = distanceToCenter / (distanceToEdge + distanceToCenter);
-            relativeDistance = 1 - (1 - relativeDistance) * multiplier * multiplier;
+            relativeDistance = distanceToCenter / distanceTotal;
         }
 
         if (relativeDistance < radius) {
@@ -346,20 +353,38 @@ public final class Injection {
             if (isInRange) {
                 return null;
             }
-            float[] out = new float[behaviours.length];
-            for (int i = 0; i < behaviours.length; i++) {
-                var behaviour = behaviours[i];
-                if (behaviour.asSquish() != null) {
-                    out[i] = behaviour.asSquish().position();
-                } else {
-                    out[i] = thePoint[i];
-                }
-            }
-            return climateOf(out);
         }
 
+        float multiplier = 1;
+
+        for (int i = 0; i < rangeCount; i++) {
+            float p = thePoint[rangeIndices[i]];
+            DimensionBehaviour.Range range = Objects.requireNonNull(behaviours[rangeIndices[i]].asRange());
+            if (p < range.min()) {
+                multiplier *= (p + 1) / (range.min() + 1);
+            } else if (p > range.max()) {
+                multiplier *= (1 - p) / (1 - range.max());
+            }
+        }
+
+        if (relativeDistance < radius) {
+            // thePoint mutated below here
+
+            for (int i = 0; i < squishCount; i++) {
+                float diff = diffs[i];
+                thePoint[squishIndices[i]] += diff * multiplier;
+            }
+            return climateOf(thePoint);
+        }
+
+        float smallRadius = radius * (1 - multiplier);
         double relativeVolume = Math.pow(radius, squishCount);
-        float movedDistRatio = (float) (relativeDistance - Math.pow((Math.pow(relativeDistance, squishCount) - relativeVolume)/(1 - relativeVolume), 1.0 / squishCount)) / relativeDistance;
+        double relativeSmallVolume = Math.pow(smallRadius, squishCount);
+        double finalDist = Math.pow(
+            (1 - relativeSmallVolume) * (Math.pow(relativeDistance, squishCount) - relativeVolume) / (1 - relativeVolume) + relativeSmallVolume,
+            1.0 / squishCount
+        );
+        float movedDistRatio = (float) (relativeDistance - finalDist) / relativeDistance;
 
         // thePoint mutated below here
 
@@ -435,12 +460,12 @@ public final class Injection {
         }
         Climate.TargetPoint centerClimate = climateOf(center);
         Climate.TargetPoint remappedCenterClimate = operator.apply(centerClimate);
-        DimensionBehaviour temperature;
-        DimensionBehaviour humidity;
+        DimensionBehaviour<?> temperature;
+        DimensionBehaviour<?> humidity;
         DimensionBehaviour.Range continentalness = this.continentalness;
-        DimensionBehaviour erosion;
+        DimensionBehaviour<?> erosion;
         DimensionBehaviour.Range depth = this.depth;
-        DimensionBehaviour weirdness;
+        DimensionBehaviour<?> weirdness;
         if (this.temperature.asSquish() != null) {
             temperature = new DimensionBehaviour.Squish(Climate.unquantizeCoord(remappedCenterClimate.temperature()));
         } else {
@@ -517,6 +542,17 @@ public final class Injection {
             depth,
             weirdness,
             radius
+        );
+    }
+
+    public Climate.TargetPoint center(Climate.TargetPoint initial) {
+        return new Climate.TargetPoint(
+            temperature.asSquish() != null ? Climate.quantizeCoord(temperature.center()) : initial.temperature(),
+            humidity.asSquish() != null ? Climate.quantizeCoord(humidity.center()) : initial.humidity(),
+            initial.continentalness(),
+            erosion.asSquish() != null ? Climate.quantizeCoord(erosion.center()) : initial.erosion(),
+            initial.depth(),
+            weirdness.asSquish() != null ? Climate.quantizeCoord(weirdness.center()) : initial.weirdness()
         );
     }
 }

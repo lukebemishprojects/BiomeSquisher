@@ -22,7 +22,7 @@ public class BiomeSquisherTestMod implements ModInitializer {
             if (key == LevelStem.OVERWORLD) {
                 squishers.add(
                     new Injection(
-                        new DimensionBehaviour.Squish(0.21f),
+                        new DimensionBehaviour.Squish(0.22f),
                         new DimensionBehaviour.Squish(0.2f),
                         new DimensionBehaviour.Range(0.5f, 1.0f),
                         new DimensionBehaviour.Squish(-0.3f),
@@ -39,6 +39,7 @@ public class BiomeSquisherTestMod implements ModInitializer {
                     )))
                 );
 
+                /*
                 squishers.add(
                     new Injection(
                         new DimensionBehaviour.Squish(0.2f),
@@ -84,6 +85,7 @@ public class BiomeSquisherTestMod implements ModInitializer {
                         Relative.Position.START
                     )))
                 );
+                */
             }
         });
         LOGGER.info("BiomeSquisherTestMod initialized");
