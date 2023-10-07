@@ -211,9 +211,15 @@ public final class Injection {
             float p = thePoint[rangeIndices[i]];
             DimensionBehaviour.Range range = Objects.requireNonNull(behaviours[rangeIndices[i]].asRange());
             if (p < range.min()) {
-                multiplier *= (p + 1) / Math.min(range.min() + 1, radius);
+                //multiplier *= (p + 1) / (range.min() + 1);
+                float total = range.min() + 1;
+                float partial = range.min() - p;
+                multiplier *= Math.max(0, 1 - (partial) / Math.min(total, radius));
             } else if (p > range.max()) {
-                multiplier *= (1 - p) / Math.min(1 - range.max(), radius);
+                //multiplier *= (1 - p) / (1 - range.max());
+                float total = 1 - range.max();
+                float partial = p - range.max();
+                multiplier *= Math.max(0, 1 - (partial) / Math.min(total, radius));
             }
         }
 
@@ -393,9 +399,15 @@ public final class Injection {
             float p = thePoint[rangeIndices[i]];
             DimensionBehaviour.Range range = Objects.requireNonNull(behaviours[rangeIndices[i]].asRange());
             if (p < range.min()) {
-                multiplier *= (p + 1) / Math.min(range.min() + 1, radius);
+                //multiplier *= (p + 1) / (range.min() + 1);
+                float total = range.min() + 1;
+                float partial = range.min() - p;
+                multiplier *= Math.max(0, 1 - (partial) / Math.min(total, radius));
             } else if (p > range.max()) {
-                multiplier *= (1 - p) / Math.min(1 - range.max(), radius);
+                //multiplier *= (1 - p) / (1 - range.max());
+                float total = 1 - range.max();
+                float partial = p - range.max();
+                multiplier *= Math.max(0, 1 - (partial) / Math.min(total, radius));
             }
         }
 

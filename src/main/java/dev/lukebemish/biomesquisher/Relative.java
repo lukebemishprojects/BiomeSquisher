@@ -1,11 +1,23 @@
 package dev.lukebemish.biomesquisher;
 
 import com.google.common.collect.ImmutableList;
+import com.mojang.serialization.Codec;
+import com.mojang.serialization.codecs.RecordCodecBuilder;
+import net.minecraft.util.StringRepresentable;
+import org.jetbrains.annotations.NotNull;
 
 import java.util.List;
+import java.util.Locale;
 import java.util.Objects;
 
 public final class Relative {
+    public static final Codec<Relative> CODEC = RecordCodecBuilder.create(i -> i.group(
+        Position.CODEC.optionalFieldOf("temperature", Position.CENTER).forGetter(Relative::temperature),
+        Position.CODEC.optionalFieldOf("humidity", Position.CENTER).forGetter(Relative::humidity),
+        Position.CODEC.optionalFieldOf("erosion", Position.CENTER).forGetter(Relative::erosion),
+        Position.CODEC.optionalFieldOf("weirdness", Position.CENTER).forGetter(Relative::weirdness)
+    ).apply(i, Relative::new));
+
     private final Position temperature;
     private final Position humidity;
     private final Position erosion;
@@ -61,11 +73,12 @@ public final class Relative {
             '}';
     }
 
-    public enum Position {
+    public enum Position implements StringRepresentable {
         START(-1),
         CENTER(0),
         END(1);
 
+        public static final Codec<Position> CODEC = StringRepresentable.fromEnum(Position::values);
         private final float offset;
 
         Position(float offset) {
@@ -75,10 +88,17 @@ public final class Relative {
         public float offset() {
             return offset;
         }
+
+        @Override
+        public @NotNull String getSerializedName() {
+            return name().toLowerCase(Locale.ROOT);
+        }
     }
 
     public static final class Series {
         private final List<Relative> relatives;
+
+        public static final Codec<Series> CODEC = Relative.CODEC.listOf().xmap(Series::new, Series::relatives);
 
         public Series(List<Relative> relatives) {
             ImmutableList.Builder<Relative> relativesBuilder = ImmutableList.builder();
@@ -130,6 +150,19 @@ public final class Relative {
 
         public List<Relative> relatives() {
             return relatives;
+        }
+
+        @Override
+        public boolean equals(Object object) {
+            if (this == object) return true;
+            if (object == null || getClass() != object.getClass()) return false;
+            Series series = (Series) object;
+            return Objects.equals(relatives, series.relatives);
+        }
+
+        @Override
+        public int hashCode() {
+            return Objects.hash(relatives);
         }
     }
 

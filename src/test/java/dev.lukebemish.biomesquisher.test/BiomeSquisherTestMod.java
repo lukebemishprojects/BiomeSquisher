@@ -20,8 +20,8 @@ public class BiomeSquisherTestMod implements ModInitializer {
             if (key == LevelStem.OVERWORLD) {
                 squishers.add(
                     new Injection(
-                        new DimensionBehaviour.Squish(0.2f),
-                        new DimensionBehaviour.Squish(0.2f),
+                        new DimensionBehaviour.Squish(0.21f),
+                        new DimensionBehaviour.Squish(0.19f),
                         new DimensionBehaviour.Range(0.5f, 1.0f),
                         new DimensionBehaviour.Squish(-0.3f),
                         new DimensionBehaviour.Range(-0.6f, 0f),
@@ -36,7 +36,7 @@ public class BiomeSquisherTestMod implements ModInitializer {
                 squishers.add(
                     new Injection(
                         new DimensionBehaviour.Squish(0.2f),
-                        new DimensionBehaviour.Squish(-0.6f),
+                        new DimensionBehaviour.Squish(-0.61f),
                         new DimensionBehaviour.Range(0.5f, 1.0f),
                         new DimensionBehaviour.Squish(-0.3f),
                         new DimensionBehaviour.Range(-0.6f, 0f),
@@ -51,7 +51,7 @@ public class BiomeSquisherTestMod implements ModInitializer {
                 squishers.add(
                     new Injection(
                         new DimensionBehaviour.Squish(0.2f),
-                        new DimensionBehaviour.Squish(0.2f),
+                        new DimensionBehaviour.Squish(0.14f),
                         new DimensionBehaviour.Range(0.5f, 1.0f),
                         new DimensionBehaviour.Squish(-0.3f),
                         new DimensionBehaviour.Range(-0.6f, 0f),
@@ -66,7 +66,7 @@ public class BiomeSquisherTestMod implements ModInitializer {
                 squishers.add(
                     new Injection(
                         new DimensionBehaviour.Squish(1.0f),
-                        new DimensionBehaviour.Squish(0.1f),
+                        new DimensionBehaviour.Squish(0.12f),
                         new DimensionBehaviour.Range(0.5f, 1.0f),
                         new DimensionBehaviour.Squish(-0.3f),
                         new DimensionBehaviour.Range(-0.6f, 0f),

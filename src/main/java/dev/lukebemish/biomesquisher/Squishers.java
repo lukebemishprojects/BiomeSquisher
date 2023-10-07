@@ -67,7 +67,6 @@ public class Squishers {
         outer:
         for (var pair : parameterList.values()) {
             var climatePoint = pair.getFirst();
-            double currentDistance = 0;
             for (int i = 0; i < dimensionCount; i++) {
                 if (
                     Math.abs(initial[i] - dimensions[i].fromParameterPoint(climatePoint).min()) <= injection.radius() ||
