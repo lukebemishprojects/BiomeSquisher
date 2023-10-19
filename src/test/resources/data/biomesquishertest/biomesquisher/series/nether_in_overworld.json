@@ -3,9 +3,9 @@
     "minecraft:overworld"
   ],
   "squishers": [
-    "biomesquishertest:warped_forest",
     "biomesquishertest:crimson_forest",
     "biomesquishertest:soul_sand_valley",
-    "biomesquishertest:basalt_deltas"
+    "biomesquishertest:basalt_deltas",
+    "biomesquishertest:warped_forest"
   ]
 }

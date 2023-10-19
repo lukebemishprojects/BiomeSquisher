@@ -199,7 +199,6 @@ public class Squishers {
 
     public double[] reverse(double[] target, Relative.Series relatives) {
         for (int i = injections.size() - 1; i >= 0; i--) {
-            //noinspection DataFlowIssue
             target = injections.get(i).getFirst().unsquish(target, relatives);
         }
         return target;

@@ -8,6 +8,7 @@ import net.minecraft.world.level.biome.Climate;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+import java.util.Arrays;
 import java.util.Objects;
 import java.util.function.Function;
 import java.util.function.UnaryOperator;
@@ -204,7 +205,8 @@ public final class Injection {
         }
     }
 
-    public double @NotNull [] unsquish(double[] thePoint, Relative.Series relatives) {
+    public double @NotNull [] unsquish(double[] original, Relative.Series relatives) {
+        double[] thePoint = Arrays.copyOf(original, original.length);
         double[] relativeEdge = new double[squishCount];
         int temperature = -1;
         int humidity = -1;
@@ -293,12 +295,11 @@ public final class Injection {
         );
 
         if (result.relativeDistance() == 0) {
-            double[] direction = subtract(relativeEdge, result.squishCenter());
             // thePoint mutated below here
 
             for (int i = 0; i < squishCount; i++) {
-                double diff = direction[i];
-                thePoint[squishIndices[i]] = result.squishCenter()[i] + diff * finalDist;
+                double diff = relativeEdge[i] * finalDist;
+                thePoint[squishIndices[i]] = findAbsolutePosition(result.squishCenter()[i], diff, i);
             }
 
             return thePoint;
@@ -390,14 +391,6 @@ public final class Injection {
         return multiplier;
     }
 
-    private static double[] subtract(double[] a, double[] b) {
-        double[] out = new double[a.length];
-        for (int i = 0; i < a.length; i++) {
-            out[i] = a[i] - b[i];
-        }
-        return out;
-    }
-
     public @Nullable Climate.TargetPoint squish(Climate.TargetPoint initial) {
         double[] thePoint = new double[] {
             unquantizeAndClamp(initial.temperature()),
@@ -410,7 +403,7 @@ public final class Injection {
 
         SquishingResolt result = squishingResult(thePoint);
 
-        if (result.relativeDistance < radius) {
+        if (result.relativeDistance <= radius) {
             boolean isInRange = true;
             for (int i = 0; i < rangeCount; i++) {
                 @NotNull DimensionBehaviour.Range range = Objects.requireNonNull(behaviours[rangeIndices[i]].asRange());
@@ -428,7 +421,7 @@ public final class Injection {
 
         double multiplier = calculateMultiplier(thePoint);
 
-        if (result.relativeDistance < radius) {
+        if (result.relativeDistance <= radius) {
             // thePoint mutated below here
 
             for (int i = 0; i < squishCount; i++) {
