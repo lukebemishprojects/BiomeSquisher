@@ -32,15 +32,16 @@ public class MinecraftServerMixin {
         method = "<init>",
         at = @At("RETURN")
     )
-    private void biomesquisher_load(Thread serverThread,
-                                           LevelStorageSource.LevelStorageAccess storageSource,
-                                           PackRepository packRepository,
-                                           WorldStem worldStem,
-                                           Proxy proxy,
-                                           DataFixer fixerUpper,
-                                           Services services,
-                                           ChunkProgressListenerFactory progressListenerFactory,
-                                           CallbackInfo ci
+    private void biomesquisher_load(
+        Thread serverThread,
+        LevelStorageSource.LevelStorageAccess storageSource,
+        PackRepository packRepository,
+        WorldStem worldStem,
+        Proxy proxy,
+        DataFixer fixerUpper,
+        Services services,
+        ChunkProgressListenerFactory progressListenerFactory,
+        CallbackInfo ci
     ) {
         //noinspection DataFlowIssue
         var access = ((MinecraftServer) (Object) this).registryAccess();
@@ -48,11 +49,12 @@ public class MinecraftServerMixin {
         registry.forEach(value -> {
             ResourceKey<LevelStem> key = registry.getResourceKey(value).orElseThrow();
             Constants.LOGGER.info("Attempting to squish {}", key.location());
+            Holder<LevelStem> holder = registry.getHolderOrThrow(key);
             if (value.generator() instanceof NoiseBasedChunkGenerator generator) {
                 var biomeSource = generator.getBiomeSource();
                 if (biomeSource instanceof MultiNoiseBiomeSource multiNoiseBiomeSource) {
                     var parameters = ((MultiNoiseBiomeSourceAccessor) multiNoiseBiomeSource).biomesquisher_parameters();
-                    ((Squishable) parameters).biomesquisher_squish(key, access);
+                    ((Squishable) parameters).biomesquisher_squish(holder, access, worldStem.resourceManager());
                     Squishers squishers = ((Squishable) parameters).biomesquisher_squishers();
                     if (squishers != null && squishers.needsSpacialScaling()) {
                         NoiseGeneratorSettings settings = generator.generatorSettings().value();

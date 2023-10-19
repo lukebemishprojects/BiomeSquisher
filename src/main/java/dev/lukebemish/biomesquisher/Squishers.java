@@ -3,7 +3,6 @@ package dev.lukebemish.biomesquisher;
 import com.mojang.datafixers.util.Either;
 import com.mojang.datafixers.util.Pair;
 import net.minecraft.core.Holder;
-import net.minecraft.util.Mth;
 import net.minecraft.world.level.biome.Biome;
 import net.minecraft.world.level.biome.Climate;
 import net.minecraft.world.level.levelgen.DensityFunction;
@@ -18,10 +17,10 @@ import java.util.function.Consumer;
 import java.util.stream.Stream;
 
 public class Squishers {
-    private float relativeSizeTemperature = 1;
-    private float relativeSizeHumidity = 1;
-    private float relativeSizeErosion = 1;
-    private float relativeSizeWeirdness = 1;
+    private double relativeSizeTemperature = 1;
+    private double relativeSizeHumidity = 1;
+    private double relativeSizeErosion = 1;
+    private double relativeSizeWeirdness = 1;
 
     private final List<Pair<Injection, Holder<Biome>>> injections = new ArrayList<>();
 
@@ -31,7 +30,7 @@ public class Squishers {
         this.parameterList = parameterList;
     }
 
-    private Injection click(Injection injection) {
+    private Injection snap(Injection injection) {
         List<Pair<long[], Double>> candidates = new ArrayList<>();
         int dimensionCount = 0;
         int temperature = -1;
@@ -43,25 +42,25 @@ public class Squishers {
         if (injection.temperature().asSquish() != null) {
             temperature = dimensionCount;
             dimensionCount++;
-            initial[temperature] = Climate.quantizeCoord(injection.temperature().asSquish().center());
+            initial[temperature] = Injection.quantizeCoord(injection.temperature().asSquish().center());
             dimensions[temperature] = Dimension.TEMPERATURE;
         }
         if (injection.humidity().asSquish() != null) {
             humidity = dimensionCount;
             dimensionCount++;
-            initial[humidity] = Climate.quantizeCoord(injection.humidity().asSquish().center());
+            initial[humidity] = Injection.quantizeCoord(injection.humidity().asSquish().center());
             dimensions[humidity] = Dimension.HUMIDITY;
         }
         if (injection.erosion().asSquish() != null) {
             erosion = dimensionCount;
             dimensionCount++;
-            initial[erosion] = Climate.quantizeCoord(injection.erosion().asSquish().center());
+            initial[erosion] = Injection.quantizeCoord(injection.erosion().asSquish().center());
             dimensions[erosion] = Dimension.EROSION;
         }
         if (injection.weirdness().asSquish() != null) {
             weirdness = dimensionCount;
             dimensionCount++;
-            initial[weirdness] = Climate.quantizeCoord(injection.weirdness().asSquish().center());
+            initial[weirdness] = Injection.quantizeCoord(injection.weirdness().asSquish().center());
             dimensions[weirdness] = Dimension.WEIRDNESS;
         }
         outer:
@@ -84,7 +83,7 @@ public class Squishers {
                 Long.MAX_VALUE
             };
             for (int i = 0; i < dimensionCount; i++) {
-                findCorners(initial, dimensions, i, dimensionCount, candidates::add, current, Climate.quantizeCoord(injection.radius()), climatePoint);
+                findCorners(initial, dimensions, i, dimensionCount, candidates::add, current, Injection.quantizeCoord(injection.radius()), climatePoint);
             }
         }
         candidates.sort(CORNER_COMPARATOR);
@@ -95,7 +94,8 @@ public class Squishers {
         DimensionBehaviour[] behaviours = new DimensionBehaviour[dimensionCount];
         for (int i = 0; i < dimensionCount; i++) {
             if (center[i] != Long.MAX_VALUE) {
-                behaviours[i] = new DimensionBehaviour.Squish(Climate.unquantizeCoord(center[i]));
+                //noinspection DataFlowIssue
+                behaviours[i] = new DimensionBehaviour.Squish(Injection.unquantizeAndClamp(center[i]), dimensions[i].fromInjection(injection).asSquish().degree());
             }
         }
         DimensionBehaviour temperatureOut = temperature == -1 ? injection.temperature() : (behaviours[temperature] == null ? injection.temperature() : behaviours[temperature]);
@@ -103,7 +103,7 @@ public class Squishers {
         DimensionBehaviour erosionOut = erosion == -1 ? injection.erosion() : (behaviours[erosion] == null ? injection.erosion() : behaviours[erosion]);
         DimensionBehaviour weirdnessOut = weirdness == -1 ? injection.weirdness() : (behaviours[weirdness] == null ? injection.weirdness() : behaviours[weirdness]);
 
-        return new Injection(
+        return Injection.of(
             temperatureOut,
             humidityOut,
             injection.continentalness(),
@@ -167,9 +167,13 @@ public class Squishers {
         return Math.sqrt(distance);
     }
 
-    public void add(Injection injection, Holder<Biome> biomeHolder, Relative.Series relatives, boolean click) {
-        if (click) {
-            injection = click(injection);
+    public void add(Squisher squisher) {
+        add(squisher.injection(), squisher.biome(), squisher.relative(), squisher.snap());
+    }
+
+    private void add(Injection injection, Holder<Biome> biomeHolder, Relative.Series relatives, boolean snap) {
+        if (snap) {
+            injection = snap(injection);
         }
         injection = injection.remap(p -> reverse(p, relatives));
         boolean isTemperature = injection.temperature().asSquish() != null;
@@ -178,23 +182,24 @@ public class Squishers {
         boolean isWeirdness = injection.weirdness().asSquish() != null;
         int dimensions = (isTemperature ? 1 : 0) + (isHumidity ? 1 : 0) + (isErosion ? 1 : 0) + (isWeirdness ? 1 : 0);
         if (isTemperature) {
-            relativeSizeTemperature = (float) Math.pow(Math.pow(relativeSizeTemperature, dimensions) + Math.pow(injection.radius(), dimensions), 1.0 / dimensions);
+            relativeSizeTemperature = Math.pow(Math.pow(relativeSizeTemperature, dimensions) + Math.pow(injection.radius(), dimensions), 1.0 / dimensions);
         }
         if (isHumidity) {
-            relativeSizeHumidity = (float) Math.pow(Math.pow(relativeSizeHumidity, dimensions) + Math.pow(injection.radius(), dimensions), 1.0 / dimensions);
+            relativeSizeHumidity = Math.pow(Math.pow(relativeSizeHumidity, dimensions) + Math.pow(injection.radius(), dimensions), 1.0 / dimensions);
         }
         if (isErosion) {
-            relativeSizeErosion = (float) Math.pow(Math.pow(relativeSizeErosion, dimensions) + Math.pow(injection.radius(), dimensions), 1.0 / dimensions);
+            relativeSizeErosion = Math.pow(Math.pow(relativeSizeErosion, dimensions) + Math.pow(injection.radius(), dimensions), 1.0 / dimensions);
         }
         if (isWeirdness) {
-            relativeSizeWeirdness = (float) Math.pow(Math.pow(relativeSizeWeirdness, dimensions) + Math.pow(injection.radius(), dimensions), 1.0 / dimensions);
+            relativeSizeWeirdness = Math.pow(Math.pow(relativeSizeWeirdness, dimensions) + Math.pow(injection.radius(), dimensions), 1.0 / dimensions);
         }
-        float relativeVolume = (isTemperature ? relativeSizeTemperature : 1) * (isHumidity ? relativeSizeHumidity : 1) * (isErosion ? relativeSizeErosion : 1) * (isWeirdness ? relativeSizeWeirdness : 1);
+        double relativeVolume = (isTemperature ? relativeSizeTemperature : 1) * (isHumidity ? relativeSizeHumidity : 1) * (isErosion ? relativeSizeErosion : 1) * (isWeirdness ? relativeSizeWeirdness : 1);
         injections.add(0, Pair.of(injection.scale(relativeVolume), biomeHolder));
     }
 
-    public Climate.TargetPoint reverse(Climate.TargetPoint target, Relative.Series relatives) {
+    public double[] reverse(double[] target, Relative.Series relatives) {
         for (int i = injections.size() - 1; i >= 0; i--) {
+            //noinspection DataFlowIssue
             target = injections.get(i).getFirst().unsquish(target, relatives);
         }
         return target;
@@ -226,10 +231,10 @@ public class Squishers {
     }
 
     public NoiseRouter wrap(NoiseRouter router) {
-        var temperature = relativeSizeTemperature == 1 ? router.temperature() : wrapHolderHolder(scaledOrElse(unwrapHolderHolder(router.temperature()), Mth.sqrt(relativeSizeTemperature)));
-        var humidity = relativeSizeHumidity == 1 ? router.vegetation() : wrapHolderHolder(scaledOrElse(unwrapHolderHolder(router.vegetation()), Mth.sqrt(relativeSizeHumidity)));
-        var erosion = relativeSizeErosion == 1 ? router.erosion() : wrapHolderHolder(scaledOrElse(unwrapHolderHolder(router.erosion()), Mth.sqrt(relativeSizeErosion)));
-        var weirdness = relativeSizeWeirdness == 1 ? router.ridges() : wrapHolderHolder(scaledOrElse(unwrapHolderHolder(router.ridges()), Mth.sqrt(relativeSizeWeirdness)));
+        var temperature = relativeSizeTemperature == 1 ? router.temperature() : wrapHolderHolder(scaledOrElse(unwrapHolderHolder(router.temperature()), Math.sqrt(relativeSizeTemperature)));
+        var humidity = relativeSizeHumidity == 1 ? router.vegetation() : wrapHolderHolder(scaledOrElse(unwrapHolderHolder(router.vegetation()), Math.sqrt(relativeSizeHumidity)));
+        var erosion = relativeSizeErosion == 1 ? router.erosion() : wrapHolderHolder(scaledOrElse(unwrapHolderHolder(router.erosion()), Math.sqrt(relativeSizeErosion)));
+        var weirdness = relativeSizeWeirdness == 1 ? router.ridges() : wrapHolderHolder(scaledOrElse(unwrapHolderHolder(router.ridges()), Math.sqrt(relativeSizeWeirdness)));
         return new NoiseRouter(
             router.barrierNoise(),
             router.fluidLevelFloodednessNoise(),
@@ -263,12 +268,12 @@ public class Squishers {
         return new DensityFunctions.HolderHolder(Holder.direct(function));
     }
 
-    private static DensityFunction scaledOrElse(DensityFunction input, float scale) {
-        var scaler = new InternalScalingSampler.SetScale(scale);
+    private static DensityFunction scaledOrElse(DensityFunction input, double scale) {
+        var scaler = new InternalScalingSampler.SetScale((float) scale);
         var scaled = scaler.apply(input);
         if (scaler.scaled()) {
             return scaled;
         }
-        return new InternalScalingSampler(input, scale);
+        return new InternalScalingSampler(input, (float) scale);
     }
 }

@@ -10,8 +10,6 @@
 	"license": "BSD-3-clause",
 	"environment": "*",
 	"entrypoints": {
-		"main": [
-      "dev.lukebemish.biomesquisher.test.BiomeSquisherTestMod"
-		]
+		"main": []
 	}
 }

@@ -1,0 +1,32 @@
+{
+  "injection": {
+    "temperature": {
+      "type": "squish",
+      "position": 0.2
+    },
+    "humidity": {
+      "type": "squish",
+      "position": -0.61
+    },
+    "continentalness": {
+      "type": "range",
+      "min": 0.5,
+      "max": 1.0
+    },
+    "erosion": {
+      "type": "squish",
+      "position": -0.3
+    },
+    "depth": {
+      "type": "range",
+      "min": -0.6,
+      "max": 0.0
+    },
+    "weirdness": {
+      "type": "squish",
+      "position": 0.2
+    },
+    "radius": 0.1
+  },
+  "biome": "minecraft:crimson_forest"
+}

@@ -1,9 +1,22 @@
 package dev.lukebemish.biomesquisher;
 
+import com.google.common.collect.BiMap;
+import com.google.common.collect.ImmutableBiMap;
+import com.mojang.serialization.Codec;
+import com.mojang.serialization.codecs.RecordCodecBuilder;
+import net.minecraft.util.StringRepresentable;
 import org.jetbrains.annotations.Contract;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+import java.util.Locale;
+
 public sealed interface DimensionBehaviour {
+    BiMap<Type, Codec<? extends DimensionBehaviour>> TYPE_MAP = ImmutableBiMap.<Type, Codec<? extends DimensionBehaviour>>builder()
+        .put(Type.RANGE, Range.CODEC)
+        .put(Type.SQUISH, Squish.CODEC)
+        .build();
+    Codec<DimensionBehaviour> CODEC = Type.CODEC.dispatch(b -> TYPE_MAP.inverse().get(b.codec()), TYPE_MAP::get);
     @Contract(pure = true)
     default @Nullable Range asRange() {
         return null;
@@ -14,20 +27,43 @@ public sealed interface DimensionBehaviour {
         return null;
     }
 
-    float center();
+    double center();
+    Codec<? extends DimensionBehaviour> codec();
+
+    enum Type implements StringRepresentable {
+        RANGE,
+        SQUISH;
+
+        public static final Codec<Type> CODEC = StringRepresentable.fromEnum(Type::values);
+
+        @Override
+        public @NotNull String getSerializedName() {
+            return this.name().toLowerCase(Locale.ROOT);
+        }
+    }
 
     final class Range implements DimensionBehaviour {
-        private final float min;
-        private final float max;
+        public static final Codec<Range> CODEC = RecordCodecBuilder.create(i -> i.group(
+            Codec.DOUBLE.fieldOf("min").forGetter(Range::min),
+            Codec.DOUBLE.fieldOf("max").forGetter(Range::max)
+        ).apply(i, Range::new));
 
-        public Range(float min, float max) {
+        private final double min;
+        private final double max;
+
+        public Range(double min, double max) {
             this.min = min;
             this.max = max;
             if (min >= max) throw new IllegalArgumentException("min must be less than max");
         }
 
-        public float min() { return min; }
-        public float max() { return max; }
+        public double min() {
+            return min;
+        }
+
+        public double max() {
+            return max;
+        }
 
         @Override
         public Range asRange() {
@@ -35,8 +71,13 @@ public sealed interface DimensionBehaviour {
         }
 
         @Override
-        public float center() {
+        public double center() {
             return (min + max) / 2f;
+        }
+
+        @Override
+        public Codec<? extends DimensionBehaviour> codec() {
+            return CODEC;
         }
 
         @Override
@@ -49,13 +90,22 @@ public sealed interface DimensionBehaviour {
     }
 
     final class Squish implements DimensionBehaviour {
-        private final float position;
+        public static final Codec<Squish> CODEC = RecordCodecBuilder.create(i -> i.group(
+            Codec.DOUBLE.fieldOf("position").forGetter(Squish::position),
+            Codec.DOUBLE.optionalFieldOf("degree", 1d).forGetter(Squish::degree)
+        ).apply(i, Squish::new));
 
-        public Squish(float position) {
+        private final double position;
+        private final double degree;
+
+        public Squish(double position, double degree) {
             this.position = position;
+            this.degree = degree;
         }
 
-        public float position() { return position; }
+        public double position() {
+            return position;
+        }
 
         @Override
         public Squish asSquish() {
@@ -63,15 +113,25 @@ public sealed interface DimensionBehaviour {
         }
 
         @Override
-        public float center() {
+        public double center() {
             return position;
+        }
+
+        @Override
+        public Codec<? extends DimensionBehaviour> codec() {
+            return CODEC;
         }
 
         @Override
         public String toString() {
             return "DimensionBehaviour.Squish{" +
                 "position=" + position +
+                ", degree=" + degree +
                 '}';
+        }
+
+        public double degree() {
+            return degree;
         }
     }
 }
