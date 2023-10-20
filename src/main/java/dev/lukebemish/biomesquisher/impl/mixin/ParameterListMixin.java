@@ -2,7 +2,6 @@ package dev.lukebemish.biomesquisher.impl.mixin;
 
 import com.llamalad7.mixinextras.sugar.Share;
 import com.llamalad7.mixinextras.sugar.ref.LocalRef;
-import dev.lukebemish.biomesquisher.Squisher;
 import dev.lukebemish.biomesquisher.impl.Squishers;
 import dev.lukebemish.biomesquisher.impl.injected.Squishable;
 import net.minecraft.core.Holder;
@@ -30,7 +29,7 @@ public class ParameterListMixin implements Squishable {
     public void biomesquisher_squish(ResourceKey<LevelStem> holder, RegistryAccess access, ResourceManager resourceManager) {
         //noinspection DataFlowIssue
         Squishers squishers = new Squishers((Climate.ParameterList<?>) (Object) this);
-        Squisher.load(holder, squishers, access);
+        Squishers.load(holder, squishers, access);
         this.squishers = squishers;
     }
 
