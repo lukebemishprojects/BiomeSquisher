@@ -68,20 +68,9 @@ providing a nice datapack-based API to inject extra biomes into the biome map.
 ### So how do I use this?
 
 Biome Squisher is controlled entirely by datapack. First, a mod defines a series which Biome Squisher will execute on the biome space
-of the relevant dimension, at `data/[namespace]/biomesquisher/series/[path].json`:
-```json5
-{
-  "levels": [
-    // a list which can contain any levels Biome Squisher can apply to - so, any using a noise biome source
-    "minecraft:overworld"
-  ],
-  "squishers": [
-    // a list of squishers to apply
-    "namespace:squisher1",
-    "namespace:squisher2"
-  ]
-}
-```
+of the relevant dimension, at `data/[namespace]/biomesquisher/series/[path].json`. They have the following structure:
+* `"levels"`: a list of identifiers of any levels to apply the contained squishers to. Can contain any levels Biome Squisher can apply to - so, any using a noise biome source
+* `"squishers"`: a list of identifiers of squishers to apply
 
 Each squisher referenced by a series should be placed at `data/[namespace]/biomesquisher/squisher/[path].json`. They have the following structure:
 * `"biome"`: the identifier of the biome to inject
