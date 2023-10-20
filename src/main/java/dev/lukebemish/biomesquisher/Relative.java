@@ -2,6 +2,7 @@ package dev.lukebemish.biomesquisher;
 
 import com.google.common.collect.ImmutableList;
 import com.mojang.serialization.Codec;
+import com.mojang.serialization.DataResult;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
 import net.minecraft.util.StringRepresentable;
 import org.jetbrains.annotations.NotNull;
@@ -9,6 +10,7 @@ import org.jetbrains.annotations.NotNull;
 import java.util.List;
 import java.util.Locale;
 import java.util.Objects;
+import java.util.function.Function;
 
 public final class Relative {
     public static final Codec<Relative> CODEC = RecordCodecBuilder.create(i -> i.group(
@@ -98,54 +100,15 @@ public final class Relative {
     public static final class Series {
         private final List<Relative> relatives;
 
-        public static final Codec<Series> CODEC = Relative.CODEC.listOf().xmap(Series::new, Series::relatives);
+        public static final Codec<Series> CODEC = Relative.CODEC.listOf().comapFlatMap(Series::validate, Function.identity()).xmap(Series::new, Series::relatives);
 
         public Series(List<Relative> relatives) {
-            ImmutableList.Builder<Relative> relativesBuilder = ImmutableList.builder();
-            boolean temperature = false;
-            boolean humidity = false;
-            boolean erosion = false;
-            boolean weirdness = false;
-            for (var click : relatives) {
-                if (click.temperature() != Position.CENTER) {
-                    if (temperature) {
-                        throw new IllegalArgumentException("Temperature was already claimed in this relative series");
-                    }
-                    temperature = true;
-                }
-                if (click.humidity() != Position.CENTER) {
-                    if (humidity) {
-                        throw new IllegalArgumentException("Humidity was already claimed in this relative series");
-                    }
-                    humidity = true;
-                }
-                if (click.erosion() != Position.CENTER) {
-                    if (erosion) {
-                        throw new IllegalArgumentException("Erosion was already claimed in this relative series");
-                    }
-                    erosion = true;
-                }
-                if (click.weirdness() != Position.CENTER) {
-                    if (weirdness) {
-                        throw new IllegalArgumentException("Weirdness was already claimed in this relative series");
-                    }
-                    weirdness = true;
-                }
-                relativesBuilder.add(click);
+            var result = validate(relatives);
+            if (result.error().isPresent()) {
+                throw new IllegalArgumentException(result.error().get().message());
             }
-            if (!temperature) {
-                throw new IllegalArgumentException("Temperature was not claimed in this relative series");
-            }
-            if (!humidity) {
-                throw new IllegalArgumentException("Humidity was not claimed in this relative series");
-            }
-            if (!erosion) {
-                throw new IllegalArgumentException("Erosion was not claimed in this relative series");
-            }
-            if (!weirdness) {
-                throw new IllegalArgumentException("Weirdness was not claimed in this relative series");
-            }
-            this.relatives = relativesBuilder.build();
+            //noinspection OptionalGetWithoutIsPresent
+            this.relatives = result.result().get();
         }
 
         public List<Relative> relatives() {
@@ -163,6 +126,54 @@ public final class Relative {
         @Override
         public int hashCode() {
             return Objects.hash(relatives);
+        }
+
+        private static DataResult<List<Relative>> validate(List<Relative> relatives) {
+            ImmutableList.Builder<Relative> relativesBuilder = ImmutableList.builder();
+            boolean temperature = false;
+            boolean humidity = false;
+            boolean erosion = false;
+            boolean weirdness = false;
+            for (var click : relatives) {
+                if (click.temperature() != Position.CENTER) {
+                    if (temperature) {
+                        return DataResult.error(() -> "Temperature was claimed twice in this relative series");
+                    }
+                    temperature = true;
+                }
+                if (click.humidity() != Position.CENTER) {
+                    if (humidity) {
+                        return DataResult.error(() -> "Humidity was claimed twice in this relative series");
+                    }
+                    humidity = true;
+                }
+                if (click.erosion() != Position.CENTER) {
+                    if (erosion) {
+                        return DataResult.error(() -> "Erosion was claimed twice in this relative series");
+                    }
+                    erosion = true;
+                }
+                if (click.weirdness() != Position.CENTER) {
+                    if (weirdness) {
+                        return DataResult.error(() -> "Weirdness was claimed twice in this relative series");
+                    }
+                    weirdness = true;
+                }
+                relativesBuilder.add(click);
+            }
+            if (!temperature) {
+                return DataResult.error(() -> "Temperature was not claimed in this relative series");
+            }
+            if (!humidity) {
+                return DataResult.error(() -> "Humidity was not claimed in this relative series");
+            }
+            if (!erosion) {
+                return DataResult.error(() -> "Erosion was not claimed in this relative series");
+            }
+            if (!weirdness) {
+                return DataResult.error(() -> "Weirdness was not claimed in this relative series");
+            }
+            return DataResult.success(relativesBuilder.build());
         }
     }
 

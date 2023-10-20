@@ -3,8 +3,9 @@ package dev.lukebemish.biomesquisher;
 import com.mojang.serialization.Codec;
 import com.mojang.serialization.DataResult;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
-import net.minecraft.util.Mth;
+import dev.lukebemish.biomesquisher.impl.Utils;
 import net.minecraft.world.level.biome.Climate;
+import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -39,13 +40,6 @@ public final class Injection {
         DimensionBehaviour.CODEC.fieldOf("weirdness").forGetter(Injection::weirdness),
         Codec.DOUBLE.fieldOf("radius").forGetter(Injection::radius)
     ).apply(i, Injection::new)).flatXmap(Injection::verify, DataResult::success).codec();
-
-    private DataResult<Injection> verify() {
-        if (squishCount < 2) {
-            return DataResult.error(() -> "Must have at least 2 squish dimensions");
-        }
-        return DataResult.success(this);
-    }
 
     public static Injection of(
         DimensionBehaviour temperature,
@@ -175,36 +169,6 @@ public final class Injection {
         return radius;
     }
 
-    public static double unquantizeAndClamp(long coord) {
-        return Mth.clamp(Climate.unquantizeCoord(coord), -1, 1);
-    }
-    private double[] findRelativePosition(double[] centers, double[] point) {
-        double[] relative = new double[squishCount];
-        for (int i = 0; i < squishCount; i++) {
-            double diff = centers[i] - point[i];
-            //noinspection DataFlowIssue
-            double power = behaviours[squishIndices[i]].asSquish().degree() / this.degreeScaling;
-            if (diff < 0) {
-                relative[i] = Math.pow(diff / (centers[i] - 1), power);
-            } else if (diff > 0) {
-                relative[i] = -Math.pow(diff / (centers[i] + 1), power);
-            }
-        }
-        return relative;
-    }
-
-    private double findAbsolutePosition(double center, double relative, int i) {
-        //noinspection DataFlowIssue
-        double power = behaviours[squishIndices[i]].asSquish().degree() / this.degreeScaling;
-        if (relative < 0) {
-            return center - Math.pow(-relative, 1d / power) * (center + 1);
-        } else if (relative > 0) {
-            return center + Math.pow(relative, 1d / power) * (1 - center);
-        } else {
-            return center;
-        }
-    }
-
     public double @NotNull [] unsquish(double[] original, Relative.Series relatives) {
         double[] thePoint = Arrays.copyOf(original, original.length);
         double[] relativeEdge = new double[squishCount];
@@ -317,6 +281,112 @@ public final class Injection {
         return thePoint;
     }
 
+    public @Nullable Climate.TargetPoint squish(Climate.TargetPoint initial) {
+        double[] thePoint = new double[] {
+            Utils.unquantizeAndClamp(initial.temperature()),
+            Utils.unquantizeAndClamp(initial.humidity()),
+            Utils.unquantizeAndClamp(initial.continentalness()),
+            Utils.unquantizeAndClamp(initial.erosion()),
+            Utils.unquantizeAndClamp(initial.depth()),
+            Utils.unquantizeAndClamp(initial.weirdness())
+        };
+
+        SquishingResolt result = squishingResult(thePoint);
+
+        if (result.relativeDistance <= radius) {
+            boolean isInRange = true;
+            for (int i = 0; i < rangeCount; i++) {
+                @NotNull DimensionBehaviour.Range range = Objects.requireNonNull(behaviours[rangeIndices[i]].asRange());
+                double min = range.min();
+                double max = range.max();
+                double value = thePoint[rangeIndices[i]];
+                if (value < min || value > max) {
+                    isInRange = false;
+                }
+            }
+            if (isInRange) {
+                return null;
+            }
+        }
+
+        double multiplier = calculateMultiplier(thePoint);
+
+        if (result.relativeDistance <= radius) {
+            // thePoint mutated below here
+
+            for (int i = 0; i < squishCount; i++) {
+                double diff = (result.squishCenter()[i] - thePoint[squishIndices[i]]) * multiplier;
+                thePoint[squishIndices[i]] += diff;
+            }
+            return climateOf(thePoint);
+        }
+
+        double smallRadius = radius * (1 - multiplier);
+        double relativeVolume = Math.pow(radius, squishCount);
+        double relativeSmallVolume = Math.pow(smallRadius, squishCount);
+        double finalDist = Math.pow(
+            (1 - relativeSmallVolume) * (Math.pow(result.relativeDistance, squishCount) - relativeVolume) / (1 - relativeVolume) + relativeSmallVolume,
+            1.0 / squishCount
+        );
+        double finalRatio = finalDist / result.relativeDistance;
+
+        // thePoint mutated below here
+
+        for (int i = 0; i < squishCount; i++) {
+            double diff = result.relativeDiffs[i] * finalRatio;
+            thePoint[squishIndices[i]] = findAbsolutePosition(result.squishCenter[i], diff, i);
+        }
+
+        return climateOf(thePoint);
+    }
+
+    @Override
+    public String toString() {
+        return "Injection{" +
+            "temperature=" + temperature +
+            ", humidity=" + humidity +
+            ", continentalness=" + continentalness +
+            ", erosion=" + erosion +
+            ", depth=" + depth +
+            ", weirdness=" + weirdness +
+            ", radius=" + radius +
+            '}';
+    }
+
+    private DataResult<Injection> verify() {
+        if (squishCount < 2) {
+            return DataResult.error(() -> "Must have at least 2 squish dimensions");
+        }
+        return DataResult.success(this);
+    }
+
+    private double[] findRelativePosition(double[] centers, double[] point) {
+        double[] relative = new double[squishCount];
+        for (int i = 0; i < squishCount; i++) {
+            double diff = centers[i] - point[i];
+            //noinspection DataFlowIssue
+            double power = behaviours[squishIndices[i]].asSquish().degree() / this.degreeScaling;
+            if (diff < 0) {
+                relative[i] = Math.pow(diff / (centers[i] - 1), power);
+            } else if (diff > 0) {
+                relative[i] = -Math.pow(diff / (centers[i] + 1), power);
+            }
+        }
+        return relative;
+    }
+
+    private double findAbsolutePosition(double center, double relative, int i) {
+        //noinspection DataFlowIssue
+        double power = behaviours[squishIndices[i]].asSquish().degree() / this.degreeScaling;
+        if (relative < 0) {
+            return center - Math.pow(-relative, 1d / power) * (center + 1);
+        } else if (relative > 0) {
+            return center + Math.pow(relative, 1d / power) * (1 - center);
+        } else {
+            return center;
+        }
+    }
+
     @NotNull
     private SquishingResolt squishingResult(double[] thePoint) {
         double[] squishPoint = new double[squishCount];
@@ -391,78 +461,15 @@ public final class Injection {
         return multiplier;
     }
 
-    public @Nullable Climate.TargetPoint squish(Climate.TargetPoint initial) {
-        double[] thePoint = new double[] {
-            unquantizeAndClamp(initial.temperature()),
-            unquantizeAndClamp(initial.humidity()),
-            unquantizeAndClamp(initial.continentalness()),
-            unquantizeAndClamp(initial.erosion()),
-            unquantizeAndClamp(initial.depth()),
-            unquantizeAndClamp(initial.weirdness())
-        };
-
-        SquishingResolt result = squishingResult(thePoint);
-
-        if (result.relativeDistance <= radius) {
-            boolean isInRange = true;
-            for (int i = 0; i < rangeCount; i++) {
-                @NotNull DimensionBehaviour.Range range = Objects.requireNonNull(behaviours[rangeIndices[i]].asRange());
-                double min = range.min();
-                double max = range.max();
-                double value = thePoint[rangeIndices[i]];
-                if (value < min || value > max) {
-                    isInRange = false;
-                }
-            }
-            if (isInRange) {
-                return null;
-            }
-        }
-
-        double multiplier = calculateMultiplier(thePoint);
-
-        if (result.relativeDistance <= radius) {
-            // thePoint mutated below here
-
-            for (int i = 0; i < squishCount; i++) {
-                double diff = (result.squishCenter()[i] - thePoint[squishIndices[i]]) * multiplier;
-                thePoint[squishIndices[i]] += diff;
-            }
-            return climateOf(thePoint);
-        }
-
-        double smallRadius = radius * (1 - multiplier);
-        double relativeVolume = Math.pow(radius, squishCount);
-        double relativeSmallVolume = Math.pow(smallRadius, squishCount);
-        double finalDist = Math.pow(
-            (1 - relativeSmallVolume) * (Math.pow(result.relativeDistance, squishCount) - relativeVolume) / (1 - relativeVolume) + relativeSmallVolume,
-            1.0 / squishCount
-        );
-        double finalRatio = finalDist / result.relativeDistance;
-
-        // thePoint mutated below here
-
-        for (int i = 0; i < squishCount; i++) {
-            double diff = result.relativeDiffs[i] * finalRatio;
-            thePoint[squishIndices[i]] = findAbsolutePosition(result.squishCenter[i], diff, i);
-        }
-
-        return climateOf(thePoint);
-    }
-
     private static Climate.TargetPoint climateOf(double[] out) {
         return new Climate.TargetPoint(
-            quantizeCoord(out[0]),
-            quantizeCoord(out[1]),
-            quantizeCoord(out[2]),
-            quantizeCoord(out[3]),
-            quantizeCoord(out[4]),
-            quantizeCoord(out[5])
+            Utils.quantizeCoord(out[0]),
+            Utils.quantizeCoord(out[1]),
+            Utils.quantizeCoord(out[2]),
+            Utils.quantizeCoord(out[3]),
+            Utils.quantizeCoord(out[4]),
+            Utils.quantizeCoord(out[5])
         );
-    }
-
-    public static long quantizeCoord(double v) {
-        return (long) (v * 10000.0);
     }
 
     private static double distanceSquare(double[] b) {
@@ -473,7 +480,8 @@ public final class Injection {
         return sum;
     }
 
-    Injection scale(double totalVolume) {
+    @ApiStatus.Internal
+    public Injection scale(double totalVolume) {
         return new Injection(
             temperature,
             humidity,
@@ -484,19 +492,7 @@ public final class Injection {
             radius / Math.pow(totalVolume, 1.0 / squishCount));
     }
 
-    @Override
-    public String toString() {
-        return "Injection{" +
-            "temperature=" + temperature +
-            ", humidity=" + humidity +
-            ", continentalness=" + continentalness +
-            ", erosion=" + erosion +
-            ", depth=" + depth +
-            ", weirdness=" + weirdness +
-            ", radius=" + radius +
-            '}';
-    }
-
+    @ApiStatus.Internal
     public Injection remap(UnaryOperator<double[]> operator) {
         double[] center = new double[behaviours.length];
         for (int i = 0; i < behaviours.length; i++) {

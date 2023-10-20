@@ -1,21 +1,27 @@
-package dev.lukebemish.biomesquisher;
+package dev.lukebemish.biomesquisher.impl;
 
-import net.minecraft.core.Registry;
-import net.minecraft.resources.ResourceKey;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.util.Mth;
+import net.minecraft.world.level.biome.Climate;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public final class Constants {
-    private Constants() {}
+public final class Utils {
+    private Utils() {}
 
     public static final String MOD_ID = "biomesquisher";
     private static final ResourceLocation ROOT = new ResourceLocation(MOD_ID, MOD_ID);
     public static final Logger LOGGER = LoggerFactory.getLogger("Biome Squisher");
-    public static final ResourceKey<Registry<Squisher.Series>> SERIES_KEY = ResourceKey.createRegistryKey(id("series"));
-    public static final ResourceKey<Registry<Squisher>> SQUISHER_KEY = ResourceKey.createRegistryKey(id("squisher"));
 
     public static ResourceLocation id(String path) {
         return ROOT.withPath(path);
+    }
+
+    public static long quantizeCoord(double v) {
+        return (long) (v * 10000.0);
+    }
+
+    public static double unquantizeAndClamp(long coord) {
+        return Mth.clamp(Climate.unquantizeCoord(coord), -1, 1);
     }
 }

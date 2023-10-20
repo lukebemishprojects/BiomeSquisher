@@ -1,6 +1,6 @@
-package dev.lukebemish.biomesquisher.injected;
+package dev.lukebemish.biomesquisher.impl.injected;
 
-import dev.lukebemish.biomesquisher.Squishers;
+import dev.lukebemish.biomesquisher.impl.Squishers;
 import net.minecraft.core.RegistryAccess;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.server.packs.resources.ResourceManager;

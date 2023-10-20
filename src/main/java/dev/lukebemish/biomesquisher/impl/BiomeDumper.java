@@ -1,10 +1,10 @@
-package dev.lukebemish.biomesquisher;
+package dev.lukebemish.biomesquisher.impl;
 
 import ar.com.hjg.pngj.ImageInfo;
 import ar.com.hjg.pngj.ImageLineHelper;
 import ar.com.hjg.pngj.ImageLineInt;
 import ar.com.hjg.pngj.PngWriter;
-import dev.lukebemish.biomesquisher.mixin.MultiNoiseBiomeSourceAccessor;
+import dev.lukebemish.biomesquisher.impl.mixin.MultiNoiseBiomeSourceAccessor;
 import net.fabricmc.loader.api.FabricLoader;
 import net.minecraft.core.Holder;
 import net.minecraft.resources.ResourceKey;

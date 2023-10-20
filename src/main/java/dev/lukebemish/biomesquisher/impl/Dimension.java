@@ -1,5 +1,7 @@
-package dev.lukebemish.biomesquisher;
+package dev.lukebemish.biomesquisher.impl;
 
+import dev.lukebemish.biomesquisher.DimensionBehaviour;
+import dev.lukebemish.biomesquisher.Injection;
 import net.minecraft.world.level.biome.Climate;
 
 import java.util.function.Function;

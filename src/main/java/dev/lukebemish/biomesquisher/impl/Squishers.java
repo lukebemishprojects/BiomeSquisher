@@ -1,7 +1,8 @@
-package dev.lukebemish.biomesquisher;
+package dev.lukebemish.biomesquisher.impl;
 
 import com.mojang.datafixers.util.Either;
 import com.mojang.datafixers.util.Pair;
+import dev.lukebemish.biomesquisher.*;
 import net.minecraft.core.Holder;
 import net.minecraft.world.level.biome.Biome;
 import net.minecraft.world.level.biome.Climate;
@@ -42,25 +43,25 @@ public class Squishers {
         if (injection.temperature().asSquish() != null) {
             temperature = dimensionCount;
             dimensionCount++;
-            initial[temperature] = Injection.quantizeCoord(injection.temperature().asSquish().center());
+            initial[temperature] = Utils.quantizeCoord(injection.temperature().asSquish().center());
             dimensions[temperature] = Dimension.TEMPERATURE;
         }
         if (injection.humidity().asSquish() != null) {
             humidity = dimensionCount;
             dimensionCount++;
-            initial[humidity] = Injection.quantizeCoord(injection.humidity().asSquish().center());
+            initial[humidity] = Utils.quantizeCoord(injection.humidity().asSquish().center());
             dimensions[humidity] = Dimension.HUMIDITY;
         }
         if (injection.erosion().asSquish() != null) {
             erosion = dimensionCount;
             dimensionCount++;
-            initial[erosion] = Injection.quantizeCoord(injection.erosion().asSquish().center());
+            initial[erosion] = Utils.quantizeCoord(injection.erosion().asSquish().center());
             dimensions[erosion] = Dimension.EROSION;
         }
         if (injection.weirdness().asSquish() != null) {
             weirdness = dimensionCount;
             dimensionCount++;
-            initial[weirdness] = Injection.quantizeCoord(injection.weirdness().asSquish().center());
+            initial[weirdness] = Utils.quantizeCoord(injection.weirdness().asSquish().center());
             dimensions[weirdness] = Dimension.WEIRDNESS;
         }
         outer:
@@ -83,7 +84,7 @@ public class Squishers {
                 Long.MAX_VALUE
             };
             for (int i = 0; i < dimensionCount; i++) {
-                findCorners(initial, dimensions, i, dimensionCount, candidates::add, current, Injection.quantizeCoord(injection.radius()), climatePoint);
+                findCorners(initial, dimensions, i, dimensionCount, candidates::add, current, Utils.quantizeCoord(injection.radius()), climatePoint);
             }
         }
         candidates.sort(CORNER_COMPARATOR);
@@ -95,7 +96,7 @@ public class Squishers {
         for (int i = 0; i < dimensionCount; i++) {
             if (center[i] != Long.MAX_VALUE) {
                 //noinspection DataFlowIssue
-                behaviours[i] = new DimensionBehaviour.Squish(Injection.unquantizeAndClamp(center[i]), dimensions[i].fromInjection(injection).asSquish().degree());
+                behaviours[i] = new DimensionBehaviour.Squish(Utils.unquantizeAndClamp(center[i]), dimensions[i].fromInjection(injection).asSquish().degree());
             }
         }
         DimensionBehaviour temperatureOut = temperature == -1 ? injection.temperature() : (behaviours[temperature] == null ? injection.temperature() : behaviours[temperature]);

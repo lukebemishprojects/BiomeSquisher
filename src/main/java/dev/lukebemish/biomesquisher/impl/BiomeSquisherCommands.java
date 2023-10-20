@@ -1,4 +1,4 @@
-package dev.lukebemish.biomesquisher;
+package dev.lukebemish.biomesquisher.impl;
 
 import com.mojang.brigadier.Command;
 import com.mojang.brigadier.CommandDispatcher;
@@ -7,7 +7,6 @@ import com.mojang.brigadier.arguments.StringArgumentType;
 import com.mojang.brigadier.context.CommandContext;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import com.mojang.brigadier.exceptions.SimpleCommandExceptionType;
-import net.minecraft.commands.CommandBuildContext;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.commands.Commands;
 import net.minecraft.commands.SharedSuggestionProvider;
@@ -26,9 +25,9 @@ public class BiomeSquisherCommands {
         Component.translatable("commands.biomesquisher.dumpbiomes.failed_to_save")
     );
 
-    public static void register(CommandDispatcher<CommandSourceStack> dispatcher, CommandBuildContext context) {
+    public static void register(CommandDispatcher<CommandSourceStack> dispatcher) {
         dispatcher.register(
-            Commands.literal(Constants.MOD_ID)
+            Commands.literal(Utils.MOD_ID)
                 .then(
                     Commands.literal("dump")
                         .requires(commandSourceStack -> commandSourceStack.hasPermission(4))
@@ -91,7 +90,7 @@ public class BiomeSquisherCommands {
         try {
             BiomeDumper.dump(commandContext.getSource().getLevel(), multiNoiseBiomeSource, x, y, location);
         } catch (IOException e) {
-            Constants.LOGGER.error("Failed to save biome dump", e);
+            Utils.LOGGER.error("Failed to save biome dump", e);
             throw ERROR_SAVING_DUMP.create();
         }
 

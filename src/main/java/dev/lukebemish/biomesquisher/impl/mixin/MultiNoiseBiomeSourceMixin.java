@@ -1,8 +1,8 @@
-package dev.lukebemish.biomesquisher.mixin;
+package dev.lukebemish.biomesquisher.impl.mixin;
 
 import com.llamalad7.mixinextras.injector.ModifyReturnValue;
-import dev.lukebemish.biomesquisher.Squishers;
-import dev.lukebemish.biomesquisher.injected.Squishable;
+import dev.lukebemish.biomesquisher.impl.Squishers;
+import dev.lukebemish.biomesquisher.impl.injected.Squishable;
 import net.minecraft.core.Holder;
 import net.minecraft.world.level.biome.Biome;
 import net.minecraft.world.level.biome.MultiNoiseBiomeSource;

@@ -1,4 +1,4 @@
-package dev.lukebemish.biomesquisher.mixin;
+package dev.lukebemish.biomesquisher.impl.mixin;
 
 import net.minecraft.core.Holder;
 import net.minecraft.world.level.biome.Biome;

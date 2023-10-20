@@ -1,9 +1,9 @@
-package dev.lukebemish.biomesquisher.mixin;
+package dev.lukebemish.biomesquisher.impl.mixin;
 
 import com.mojang.datafixers.DataFixer;
-import dev.lukebemish.biomesquisher.Constants;
-import dev.lukebemish.biomesquisher.Squishers;
-import dev.lukebemish.biomesquisher.injected.Squishable;
+import dev.lukebemish.biomesquisher.impl.Utils;
+import dev.lukebemish.biomesquisher.impl.Squishers;
+import dev.lukebemish.biomesquisher.impl.injected.Squishable;
 import net.minecraft.core.Holder;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.resources.ResourceKey;
@@ -48,7 +48,7 @@ public class MinecraftServerMixin {
         var registry = access.registry(Registries.LEVEL_STEM).orElseThrow();
         registry.forEach(value -> {
             ResourceKey<LevelStem> key = registry.getResourceKey(value).orElseThrow();
-            Constants.LOGGER.info("Attempting to squish {}", key.location());
+            Utils.LOGGER.info("Attempting to squish {}", key.location());
             if (value.generator() instanceof NoiseBasedChunkGenerator generator) {
                 var biomeSource = generator.getBiomeSource();
                 if (biomeSource instanceof MultiNoiseBiomeSource multiNoiseBiomeSource) {

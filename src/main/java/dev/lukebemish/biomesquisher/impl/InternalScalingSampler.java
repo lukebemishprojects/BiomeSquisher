@@ -1,4 +1,4 @@
-package dev.lukebemish.biomesquisher;
+package dev.lukebemish.biomesquisher.impl;
 
 import com.mojang.serialization.Codec;
 import com.mojang.serialization.MapCodec;
