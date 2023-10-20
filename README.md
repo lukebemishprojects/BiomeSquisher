@@ -31,7 +31,7 @@ with this, what if two mods want to inject at the same spot? The problem becomes
 
 This is not a new problem - since 1.18, various solutions have arisen. Some well known examples are [TerraBlender](https://github.com/Glitchfiend/TerraBlender/)
 and [Blueprint](https://github.com/team-abnormals/blueprint). Both use a similar, rather clever approach to avoid the
-issue: for a mod that wishes to add biomes, they create a new "layer" - through the use of an additional noise dimension -
+issue: for a mod that wishes to add biomes, they create a new "layer" or "slice" - through the use of an additional source of noise -
 within which the mod has complete control over biome placement - including delegating to the vanilla placement if desired.
 This allows mods to add biomes without replacing vanilla biomes, and allows multiple biome mods to coexist. However, the
 approach has a few notable limitations:
