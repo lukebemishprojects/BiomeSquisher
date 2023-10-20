@@ -44,4 +44,59 @@ approach has a few notable limitations:
 
 Biome Squisher takes a different approach to the problem. Instead of adding a new layer, Biome Squisher "squishes" the
 vanilla biomes (or, in fact, previously added modded biomes) out of the way to open a "hole" in the biome space which a
-biome can be generated within.
+biome can be generated within. To demonstrate visually, the following is a slice along the temperature and humidity axes
+of the vanilla biome space at fixed values in the other parameters. Each color represents a different biome:
+
+<img alt="original biome space slice" src="/images/original.png" width="256">
+
+And after injecting four different biomes into it:
+
+<img alt="squished biome space slice" src="/images/squished.png" width="256">
+
+Some things to note:
+- borders between biomes are maintained
+- biomes are squished in such a way that the relative area of biomes should not change - meaning that biomes uniformly become
+  less common (this is somewhat difficult to see from this image alone as much of the squishing happens in dimensions you can't see)
+- multiple mods can inject biomes at the same target location, and they will co-exist fine - the brown and red biomes in the center
+  were injected at the same position
+
+It turns out that the process is not nearly that simple, and there's some pitfalls deal with - for instance, correcting the scale
+of the in-world noise to not get too many microbiomes, or not "squishing" along the continentalness or depth dimensions where such
+squishing does not make sense. Biome Squisher accounts for these edge cases and does the math necessary for such "squishing" for you,
+providing a nice datapack-based API to inject extra biomes into the biome map.
+
+### So how do I use this?
+
+Biome Squisher is controlled entirely by datapack. First, a mod defines a series which Biome Squisher will execute on the biome space
+of the relevant dimension, at `data/[namespace]/biomesquisher/series/[path].json`:
+```json5
+{
+  "levels": [
+    // a list which can contain any levels Biome Squisher can apply to - so, any using a noise biome source
+    "minecraft:overworld"
+  ],
+  "squishers": [
+    // a list of squishers to apply
+    "namespace:squisher1",
+    "namespace:squisher2"
+  ]
+}
+```
+
+Each squisher referenced by a series should be placed at `data/[namespace]/biomesquisher/squisher/[path].json`. They have the following structure:
+* `"biome"`: the identifier of the biome to inject
+* `"injection"`: defines where and how the biome will be injected. Has the following structure:
+  * `"radius"`: how large the injection should be, with `0` being "nothing" and `1` being "the entire biome space"
+  * `"temperature"`, `"humidify"`, `"continentalness"`, `"erosion"`, `"depth"`, and `"humidity"`: define the injection's behaviour on different axes. Each has a `"type"` field and takes one of the following forms:
+    * `"type": "range"`: defines a set range to inject the biome in; in other words, the biome does not squish on this axis. `"continentalness"` and `"depth"` must define a range.
+      * `"min"` and `"max"`: define the endpoints of the range
+    * `"type": "squish"`: the biome should squish other biomes out of the way in this dimension. At least two dimensions must have squishing behaviour.
+      * `"position"`: the posiiton in this axis to inject the biome at, and squish other biomes away from
+      * `"degree"`: (optional, defaults to `1`) allows for non-square injections. Make this value larger or smaller than 1 to make the "hole" opened up by the squishing larger or smaller on this axis, shrinking accordingly on other axes
+* `"snap"`: (optional; defaults to `true`) whether the biome injection should "snap" to a corner/edge between biomes within its radius, if one is present
+* `"relative"`: (optional; defaults to the top of each dimension, in order) when two biomes attempt to inject at the same location, their relative values are queried. Takes a list of objects:
+  * `"temperature"`, `"humidity"`, `"erosion"`, `"weirdness"`: one of `"start"`, `"center"`, or `"end"`. When resolving which side of an opened hole to move a biome injection to, Biome Squisher will go through the relatives one by one till
+    it finds one with a non-`"center"` dimension that the squisher in the same location squishes in. This means that the list of relatives must give a non-`"center"` value to each dimension _exactly once_.
+
+Biome Squisher applies registered `series` in alphabetical order, so that biome injection is platform-independent and deterministic. Additionally, the mod provides the `/biomesquisher dump` command, which takes the names of two axes and values
+at the remaining four axes, and saves a PNG image slice through the biome space along the specified axes, which may be useful for debugging or generally inspecting the biome space.
