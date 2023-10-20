@@ -11,7 +11,7 @@
 	"environment": "*",
 	"entrypoints": {
 		"main": [
-      "dev.lukebemish.biomesquisher.BiomeSquisherMod"
+      "dev.lukebemish.biomesquisher.impl.BiomeSquisherMod"
 		]
 	},
 	"mixins": [

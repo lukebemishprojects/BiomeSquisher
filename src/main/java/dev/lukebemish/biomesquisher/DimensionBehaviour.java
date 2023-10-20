@@ -7,7 +7,6 @@ import com.mojang.serialization.codecs.RecordCodecBuilder;
 import net.minecraft.util.StringRepresentable;
 import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 
 import java.util.Locale;
 
@@ -18,13 +17,21 @@ public sealed interface DimensionBehaviour {
         .build();
     Codec<DimensionBehaviour> CODEC = Type.CODEC.dispatch(b -> TYPE_MAP.inverse().get(b.codec()), TYPE_MAP::get);
     @Contract(pure = true)
-    default @Nullable Range asRange() {
-        return null;
+    default Range asRange() {
+        throw new UnsupportedOperationException();
+    }
+
+    default boolean isRange() {
+        return false;
     }
 
     @Contract(pure = true)
-    default @Nullable Squish asSquish() {
-        return null;
+    default Squish asSquish() {
+        throw new UnsupportedOperationException();
+    }
+
+    default boolean isSquish() {
+        return false;
     }
 
     double center();
@@ -71,6 +78,11 @@ public sealed interface DimensionBehaviour {
         }
 
         @Override
+        public boolean isRange() {
+            return true;
+        }
+
+        @Override
         public double center() {
             return (min + max) / 2f;
         }
@@ -110,6 +122,11 @@ public sealed interface DimensionBehaviour {
         @Override
         public Squish asSquish() {
             return this;
+        }
+
+        @Override
+        public boolean isSquish() {
+            return true;
         }
 
         @Override

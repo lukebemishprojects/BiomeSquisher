@@ -40,25 +40,25 @@ public class Squishers {
         int weirdness = -1;
         long[] initial = new long[4];
         Dimension[] dimensions = new Dimension[4];
-        if (injection.temperature().asSquish() != null) {
+        if (injection.temperature().isSquish()) {
             temperature = dimensionCount;
             dimensionCount++;
             initial[temperature] = Utils.quantizeCoord(injection.temperature().asSquish().center());
             dimensions[temperature] = Dimension.TEMPERATURE;
         }
-        if (injection.humidity().asSquish() != null) {
+        if (injection.humidity().isSquish()) {
             humidity = dimensionCount;
             dimensionCount++;
             initial[humidity] = Utils.quantizeCoord(injection.humidity().asSquish().center());
             dimensions[humidity] = Dimension.HUMIDITY;
         }
-        if (injection.erosion().asSquish() != null) {
+        if (injection.erosion().isSquish()) {
             erosion = dimensionCount;
             dimensionCount++;
             initial[erosion] = Utils.quantizeCoord(injection.erosion().asSquish().center());
             dimensions[erosion] = Dimension.EROSION;
         }
-        if (injection.weirdness().asSquish() != null) {
+        if (injection.weirdness().isSquish()) {
             weirdness = dimensionCount;
             dimensionCount++;
             initial[weirdness] = Utils.quantizeCoord(injection.weirdness().asSquish().center());
@@ -95,7 +95,6 @@ public class Squishers {
         DimensionBehaviour[] behaviours = new DimensionBehaviour[dimensionCount];
         for (int i = 0; i < dimensionCount; i++) {
             if (center[i] != Long.MAX_VALUE) {
-                //noinspection DataFlowIssue
                 behaviours[i] = new DimensionBehaviour.Squish(Utils.unquantizeAndClamp(center[i]), dimensions[i].fromInjection(injection).asSquish().degree());
             }
         }
@@ -177,10 +176,10 @@ public class Squishers {
             injection = snap(injection);
         }
         injection = injection.remap(p -> reverse(p, relatives));
-        boolean isTemperature = injection.temperature().asSquish() != null;
-        boolean isHumidity = injection.humidity().asSquish() != null;
-        boolean isErosion = injection.erosion().asSquish() != null;
-        boolean isWeirdness = injection.weirdness().asSquish() != null;
+        boolean isTemperature = injection.temperature().isSquish();
+        boolean isHumidity = injection.humidity().isSquish();
+        boolean isErosion = injection.erosion().isSquish();
+        boolean isWeirdness = injection.weirdness().isSquish();
         int dimensions = (isTemperature ? 1 : 0) + (isHumidity ? 1 : 0) + (isErosion ? 1 : 0) + (isWeirdness ? 1 : 0);
         if (isTemperature) {
             relativeSizeTemperature = Math.pow(Math.pow(relativeSizeTemperature, dimensions) + Math.pow(injection.radius(), dimensions), 1.0 / dimensions);

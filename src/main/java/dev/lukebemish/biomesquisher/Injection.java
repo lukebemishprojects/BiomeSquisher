@@ -6,11 +6,9 @@ import com.mojang.serialization.codecs.RecordCodecBuilder;
 import dev.lukebemish.biomesquisher.impl.Utils;
 import net.minecraft.world.level.biome.Climate;
 import org.jetbrains.annotations.ApiStatus;
-import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.Arrays;
-import java.util.Objects;
 import java.util.function.Function;
 import java.util.function.UnaryOperator;
 
@@ -77,22 +75,22 @@ public final class Injection {
     ) {
         int totalSquish = 0;
         int totalRange = 2;
-        if (temperature.asSquish() != null) {
+        if (temperature.isSquish()) {
             totalSquish += 1;
         } else {
             totalRange += 1;
         }
-        if (humidity.asSquish() != null) {
+        if (humidity.isSquish()) {
             totalSquish += 1;
         } else {
             totalRange += 1;
         }
-        if (erosion.asSquish() != null) {
+        if (erosion.isSquish()) {
             totalSquish += 1;
         } else {
             totalRange += 1;
         }
-        if (weirdness.asSquish() != null) {
+        if (weirdness.isSquish()) {
             totalSquish += 1;
         } else {
             totalRange += 1;
@@ -116,7 +114,7 @@ public final class Injection {
         squishCount = totalSquish;
         squishIndices = new int[squishCount];
         for (int i = 0, j = 0; i < behaviours.length; i++) {
-            if (behaviours[i].asSquish() != null) {
+            if (behaviours[i].isSquish()) {
                 squishIndices[j] = i;
                 j += 1;
             }
@@ -124,7 +122,7 @@ public final class Injection {
         rangeCount = totalRange;
         rangeIndices = new int[rangeCount];
         for (int i = 0, j = 0; i < behaviours.length; i++) {
-            if (behaviours[i].asRange() != null) {
+            if (behaviours[i].isRange()) {
                 rangeIndices[j] = i;
                 j += 1;
             }
@@ -132,7 +130,6 @@ public final class Injection {
         if (squishCount != 0) {
             double totalDegree = 1;
             for (int i = 0; i < squishCount; i++) {
-                //noinspection DataFlowIssue
                 totalDegree *= behaviours[squishIndices[i]].asSquish().degree();
             }
             this.degreeScaling = Math.pow(totalDegree, 1.0 / squishCount);
@@ -169,7 +166,7 @@ public final class Injection {
         return radius;
     }
 
-    public double @NotNull [] unsquish(double[] original, Relative.Series relatives) {
+    public double[] unsquish(double[] original, Relative.Series relatives) {
         double[] thePoint = Arrays.copyOf(original, original.length);
         double[] relativeEdge = new double[squishCount];
         int temperature = -1;
@@ -177,7 +174,7 @@ public final class Injection {
         int erosion = -1;
         int weirdness = -1;
         for (int i = 0, j = 0; i < behaviours.length; i++) {
-            if (behaviours[i].asSquish() != null) {
+            if (behaviours[i].isSquish()) {
                 switch (i) {
                     case 0 -> temperature = j;
                     case 1 -> humidity = j;
@@ -296,12 +293,13 @@ public final class Injection {
         if (result.relativeDistance <= radius) {
             boolean isInRange = true;
             for (int i = 0; i < rangeCount; i++) {
-                @NotNull DimensionBehaviour.Range range = Objects.requireNonNull(behaviours[rangeIndices[i]].asRange());
+                DimensionBehaviour.Range range = behaviours[rangeIndices[i]].asRange();
                 double min = range.min();
                 double max = range.max();
                 double value = thePoint[rangeIndices[i]];
                 if (value < min || value > max) {
                     isInRange = false;
+                    break;
                 }
             }
             if (isInRange) {
@@ -364,7 +362,6 @@ public final class Injection {
         double[] relative = new double[squishCount];
         for (int i = 0; i < squishCount; i++) {
             double diff = centers[i] - point[i];
-            //noinspection DataFlowIssue
             double power = behaviours[squishIndices[i]].asSquish().degree() / this.degreeScaling;
             if (diff < 0) {
                 relative[i] = Math.pow(diff / (centers[i] - 1), power);
@@ -376,7 +373,6 @@ public final class Injection {
     }
 
     private double findAbsolutePosition(double center, double relative, int i) {
-        //noinspection DataFlowIssue
         double power = behaviours[squishIndices[i]].asSquish().degree() / this.degreeScaling;
         if (relative < 0) {
             return center - Math.pow(-relative, 1d / power) * (center + 1);
@@ -387,14 +383,12 @@ public final class Injection {
         }
     }
 
-    @NotNull
     private SquishingResolt squishingResult(double[] thePoint) {
         double[] squishPoint = new double[squishCount];
         double[] squishCenter = new double[squishCount];
         for (int i = 0; i < squishCount; i++) {
             double o = thePoint[squishIndices[i]];
             squishPoint[i] = o;
-            //noinspection DataFlowIssue
             double c = behaviours[squishIndices[i]].asSquish().position();
             squishCenter[i] = c;
         }
@@ -447,7 +441,7 @@ public final class Injection {
 
         for (int i = 0; i < rangeCount; i++) {
             double p = thePoint[rangeIndices[i]];
-            DimensionBehaviour.Range range = Objects.requireNonNull(behaviours[rangeIndices[i]].asRange());
+            DimensionBehaviour.Range range = behaviours[rangeIndices[i]].asRange();
             if (p < range.min()) {
                 double total = range.min() + 1;
                 double partial = range.min() - p;
@@ -506,11 +500,11 @@ public final class Injection {
         DimensionBehaviour erosion;
         DimensionBehaviour.Range depth = this.depth;
         DimensionBehaviour weirdness;
-        if (this.temperature.asSquish() != null) {
+        if (this.temperature.isSquish()) {
             temperature = new DimensionBehaviour.Squish(remappedCenter[0], this.temperature.asSquish().degree());
         } else {
             double centerTemperature = center[0];
-            @NotNull DimensionBehaviour.Range range = Objects.requireNonNull(this.temperature.asRange());
+            DimensionBehaviour.Range range = this.temperature.asRange();
             center[0] = range.max();
             double maxTemperature = operator.apply(center)[0];
             center[0] = range.min();
@@ -521,11 +515,11 @@ public final class Injection {
                 maxTemperature
             );
         }
-        if (this.humidity.asSquish() != null) {
+        if (this.humidity.isSquish()) {
             humidity = new DimensionBehaviour.Squish(remappedCenter[1], this.humidity.asSquish().degree());
         } else {
             double centerHumidity = center[1];
-            @NotNull DimensionBehaviour.Range range = Objects.requireNonNull(this.humidity.asRange());
+            DimensionBehaviour.Range range = this.humidity.asRange();
             center[1] = range.max();
             double maxHumidity = operator.apply(center)[1];
             center[1] = range.min();
@@ -536,11 +530,11 @@ public final class Injection {
                 maxHumidity
             );
         }
-        if (this.erosion.asSquish() != null) {
+        if (this.erosion.isSquish()) {
             erosion = new DimensionBehaviour.Squish(remappedCenter[3], this.erosion.asSquish().degree());
         } else {
             double centerErosion = center[3];
-            @NotNull DimensionBehaviour.Range range = Objects.requireNonNull(this.erosion.asRange());
+            DimensionBehaviour.Range range = this.erosion.asRange();
             center[3] = range.max();
             double maxErosion = operator.apply(center)[3];
             center[3] = range.min();
@@ -551,11 +545,11 @@ public final class Injection {
                 maxErosion
             );
         }
-        if (this.weirdness.asSquish() != null) {
+        if (this.weirdness.isSquish()) {
             weirdness = new DimensionBehaviour.Squish(remappedCenter[5], this.weirdness.asSquish().degree());
         } else {
             double centerWeirdness = center[5];
-            @NotNull DimensionBehaviour.Range range = Objects.requireNonNull(this.weirdness.asRange());
+            DimensionBehaviour.Range range = this.weirdness.asRange();
             center[5] = range.max();
             double maxWeirdness = operator.apply(center)[5];
             center[5] = range.min();
