@@ -2,13 +2,12 @@ package dev.lukebemish.biomesquisher.mixin;
 
 import com.llamalad7.mixinextras.sugar.Share;
 import com.llamalad7.mixinextras.sugar.ref.LocalRef;
-import com.mojang.serialization.JsonOps;
 import dev.lukebemish.biomesquisher.Squisher;
 import dev.lukebemish.biomesquisher.Squishers;
 import dev.lukebemish.biomesquisher.injected.Squishable;
 import net.minecraft.core.Holder;
 import net.minecraft.core.RegistryAccess;
-import net.minecraft.resources.RegistryOps;
+import net.minecraft.resources.ResourceKey;
 import net.minecraft.server.packs.resources.ResourceManager;
 import net.minecraft.world.level.biome.Biome;
 import net.minecraft.world.level.biome.Climate;
@@ -28,10 +27,10 @@ public class ParameterListMixin implements Squishable {
     @Nullable private Squishers squishers;
 
     @Override
-    public void biomesquisher_squish(Holder<LevelStem> holder, RegistryAccess access, ResourceManager resourceManager) {
+    public void biomesquisher_squish(ResourceKey<LevelStem> holder, RegistryAccess access, ResourceManager resourceManager) {
         //noinspection DataFlowIssue
         Squishers squishers = new Squishers((Climate.ParameterList<?>) (Object) this);
-        Squisher.load(holder, squishers, resourceManager, RegistryOps.create(JsonOps.INSTANCE, access));
+        Squisher.load(holder, squishers, access);
         this.squishers = squishers;
     }
 

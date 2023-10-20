@@ -280,8 +280,8 @@ public final class Injection {
             // thePoint mutated below here
 
             for (int i = 0; i < squishCount; i++) {
-                double diff = result.relativeDiffs()[i] / (1 - multiplier);
-                thePoint[squishIndices[i]] = findAbsolutePosition(result.squishCenter[i], diff, i);
+                double diff = (result.squishCenter()[i] - thePoint[squishIndices[i]]) / (1 - multiplier);
+                thePoint[squishIndices[i]] += diff;
             }
 
             return thePoint;
@@ -425,8 +425,8 @@ public final class Injection {
             // thePoint mutated below here
 
             for (int i = 0; i < squishCount; i++) {
-                double diff = result.relativeDiffs[i] * multiplier;
-                thePoint[squishIndices[i]] = findAbsolutePosition(thePoint[squishIndices[i]], diff, i);
+                double diff = (result.squishCenter()[i] - thePoint[squishIndices[i]]) * multiplier;
+                thePoint[squishIndices[i]] += diff;
             }
             return climateOf(thePoint);
         }

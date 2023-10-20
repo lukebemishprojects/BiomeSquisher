@@ -49,12 +49,11 @@ public class MinecraftServerMixin {
         registry.forEach(value -> {
             ResourceKey<LevelStem> key = registry.getResourceKey(value).orElseThrow();
             Constants.LOGGER.info("Attempting to squish {}", key.location());
-            Holder<LevelStem> holder = registry.getHolderOrThrow(key);
             if (value.generator() instanceof NoiseBasedChunkGenerator generator) {
                 var biomeSource = generator.getBiomeSource();
                 if (biomeSource instanceof MultiNoiseBiomeSource multiNoiseBiomeSource) {
                     var parameters = ((MultiNoiseBiomeSourceAccessor) multiNoiseBiomeSource).biomesquisher_parameters();
-                    ((Squishable) parameters).biomesquisher_squish(holder, access, worldStem.resourceManager());
+                    ((Squishable) parameters).biomesquisher_squish(key, access, worldStem.resourceManager());
                     Squishers squishers = ((Squishable) parameters).biomesquisher_squishers();
                     if (squishers != null && squishers.needsSpacialScaling()) {
                         NoiseGeneratorSettings settings = generator.generatorSettings().value();

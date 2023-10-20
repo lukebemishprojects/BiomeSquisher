@@ -3,12 +3,12 @@
     "temperature": {
       "type": "squish",
       "position": 1.0,
-      "degree": 0.9
+      "degree": 1.5
     },
     "humidity": {
       "type": "squish",
       "position": 0.12,
-      "degree": 1.5
+      "degree": 0.9
     },
     "continentalness": {
       "type": "range",
