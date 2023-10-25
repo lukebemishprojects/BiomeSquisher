@@ -56,6 +56,14 @@ public class Squishers {
         }
     }
 
+    public void add(Squisher squisher) {
+        add(squisher.injection(), squisher.biome(), squisher.relative(), squisher.snap());
+    }
+
+    /**
+     * "Snap" the provided injection to the nearest corner/edge of biomes, if one exists within the radius.
+     * Prefers corners/edges with more dimensions.
+     */
     private Injection snap(Injection injection) {
         List<Pair<long[], Double>> candidates = new ArrayList<>();
         int dimensionCount = 0;
@@ -190,10 +198,6 @@ public class Squishers {
             distance += Math.pow(initial[i] - corner[i], 2);
         }
         return Math.sqrt(distance);
-    }
-
-    public void add(Squisher squisher) {
-        add(squisher.injection(), squisher.biome(), squisher.relative(), squisher.snap());
     }
 
     private void add(Injection injection, Holder<Biome> biomeHolder, Relative.Series relatives, boolean snap) {

@@ -166,9 +166,17 @@ public final class Injection {
         return radius;
     }
 
+    /**
+     * Performs the reverse transformation, going from a coordinate in squished space to a coordinate in unsquished space.
+     * In other words, this transformation "eats" a hole ans squishes around the surrounding edge.
+     * @param original the original coordinate, in unquantized space (from -1 ro 1)
+     * @param relatives the relative series used to determine where the single value where the hole would be should map to
+     * @return the coordinate in unsquished space
+     */
     public double[] unsquish(double[] original, Relative.Series relatives) {
         double[] thePoint = Arrays.copyOf(original, original.length);
         double[] relativeEdge = new double[squishCount];
+
         int temperature = -1;
         int humidity = -1;
         int erosion = -1;
@@ -184,6 +192,8 @@ public final class Injection {
                 j++;
             }
         }
+
+        // First, handle relatives - this basically just solves for the first valid relative in the series and uses that.
         for (var relative : relatives.relatives()) {
             boolean toBreak = false;
             if (temperature != -1) {
@@ -227,29 +237,39 @@ public final class Injection {
             }
         }
 
-        SquishingResolt result = squishingResult(thePoint);
+        // calculate the relative distances of the point to the target point of the hole
+        RelativeDistanceResult result = relativeDistance(thePoint);
 
+        // a multiplier based on distance from the desired range in non-squished dimensions
         double multiplier = calculateMultiplier(thePoint);
 
+        // The point is far enough away from the range that no squishing occurs
         if (multiplier == 0) {
             return thePoint;
         }
 
+        // target radius of "closed" hold
         double smallRadius = radius * (1 - multiplier);
 
+        // We're inside where the (closed) hole would be, but not in the exact center point that doesn't map anywhere.
+        // In other words, we're outside of the range in unsquished dimensions - because the target "closed" hold is
+        // a point inside the range!
         if (result.relativeDistance() < smallRadius && result.relativeDistance() != 0) {
             // thePoint mutated below here
 
+            // Re-adjust distance based on the multiplier
             for (int i = 0; i < squishCount; i++) {
-                double diff = (result.squishCenter()[i] - thePoint[squishIndices[i]]) / (1 - multiplier);
-                thePoint[squishIndices[i]] += diff;
+                double diff = result.relativeDiffs[i] / (1 - multiplier);
+                thePoint[squishIndices[i]] = findAbsolutePosition(result.squishCenter[i], diff, i);
             }
 
             return thePoint;
         }
 
+        // Calculate relative volumes of the "open" and "closed" holes
         double relativeVolume = Math.pow(radius, squishCount);
         double relativeSmallVolume = Math.pow(smallRadius, squishCount);
+        // Calculate the target (relative) distance for this point from the center
         double finalDist = Math.pow(
             (1 - relativeVolume) * (Math.pow(result.relativeDistance(), squishCount) - relativeSmallVolume) / (1 - relativeSmallVolume) + relativeVolume,
             1.0 / squishCount
@@ -259,6 +279,7 @@ public final class Injection {
             // thePoint mutated below here
 
             for (int i = 0; i < squishCount; i++) {
+                // We're inside the "closed" hole and within the range. Use the relative to find target position.
                 double diff = relativeEdge[i] * finalDist;
                 thePoint[squishIndices[i]] = findAbsolutePosition(result.squishCenter()[i], diff, i);
             }
@@ -271,6 +292,7 @@ public final class Injection {
         // thePoint mutated below here
 
         for (int i = 0; i < squishCount; i++) {
+            // We're outside the "closed" hold.
             double diff = result.relativeDiffs()[i] * finalRatio;
             thePoint[squishIndices[i]] = findAbsolutePosition(result.squishCenter[i], diff, i);
         }
@@ -278,6 +300,12 @@ public final class Injection {
         return thePoint;
     }
 
+    /**
+     * Performs the forward transformation, going from a coordinate in unsquished space to a coordinate in squished space.
+     * This creates a "hole" in input space where nothing maps from
+     * @param initial the initial coordinate
+     * @return the coordinate in squished space, or null if the input coordinate is in the hole
+     */
     public @Nullable Climate.TargetPoint squish(Climate.TargetPoint initial) {
         double[] thePoint = new double[] {
             Utils.unquantizeAndClamp(initial.temperature()),
@@ -288,8 +316,10 @@ public final class Injection {
             Utils.unquantizeAndClamp(initial.weirdness())
         };
 
-        SquishingResolt result = squishingResult(thePoint);
+        // calculate the relative distances of the point to the target point of the hole
+        RelativeDistanceResult result = relativeDistance(thePoint);
 
+        // We're inside the radius of the hole
         if (result.relativeDistance <= radius) {
             boolean isInRange = true;
             for (int i = 0; i < rangeCount; i++) {
@@ -303,18 +333,22 @@ public final class Injection {
                 }
             }
             if (isInRange) {
+                // If we're in the range behaviours as well, return null
                 return null;
             }
         }
 
+        // Only close the hole completely if we're inside the range - otherwise, it'll close to a smaller hole
+        // (meaning the space inside the original hole can map to the space inside the new one)
         double multiplier = calculateMultiplier(thePoint);
 
         if (result.relativeDistance <= radius) {
             // thePoint mutated below here
 
+            // We're in the hold but not in range - squish towards the center by the proper amount to fill the "closed" hole properly
             for (int i = 0; i < squishCount; i++) {
-                double diff = (result.squishCenter()[i] - thePoint[squishIndices[i]]) * multiplier;
-                thePoint[squishIndices[i]] += diff;
+                double diff = result.relativeDiffs[i] * (1 - multiplier);
+                thePoint[squishIndices[i]] = findAbsolutePosition(result.squishCenter[i], diff, i);
             }
             return climateOf(thePoint);
         }
@@ -322,6 +356,8 @@ public final class Injection {
         double smallRadius = radius * (1 - multiplier);
         double relativeVolume = Math.pow(radius, squishCount);
         double relativeSmallVolume = Math.pow(smallRadius, squishCount);
+        // Similar to the calculation in #unsqush, but in reverse - we're going from a full sized hole to some small hole
+        // in relative distance.
         double finalDist = Math.pow(
             (1 - relativeSmallVolume) * (Math.pow(result.relativeDistance, squishCount) - relativeVolume) / (1 - relativeVolume) + relativeSmallVolume,
             1.0 / squishCount
@@ -331,6 +367,7 @@ public final class Injection {
         // thePoint mutated below here
 
         for (int i = 0; i < squishCount; i++) {
+            // We're outside the "closed" hold.
             double diff = result.relativeDiffs[i] * finalRatio;
             thePoint[squishIndices[i]] = findAbsolutePosition(result.squishCenter[i], diff, i);
         }
@@ -358,6 +395,11 @@ public final class Injection {
         return DataResult.success(this);
     }
 
+    /**
+     * Finds a relative position, measured in relative distance from the center to the edge, after accounting for shuffling
+     * the dimensions around a bit. The total dimensionality will add up to the {@link #squishCount} still, but it is shuffled
+     * between dimensions based on the {@link DimensionBehaviour.Squish#degree()} of each dimension.
+     */
     private double[] findRelativePosition(double[] centers, double[] point) {
         double[] relative = new double[squishCount];
         for (int i = 0; i < squishCount; i++) {
@@ -372,6 +414,9 @@ public final class Injection {
         return relative;
     }
 
+    /**
+     * Reverses {@link #findRelativePosition(double[], double[])} for a single dimension.
+     */
     private double findAbsolutePosition(double center, double relative, int i) {
         double power = behaviours[squishIndices[i]].asSquish().degree() / this.degreeScaling;
         if (relative < 0) {
@@ -383,7 +428,13 @@ public final class Injection {
         }
     }
 
-    private SquishingResolt squishingResult(double[] thePoint) {
+    /**
+     * Finds the relative distance of a point to the center of the hole, and returns a collection of that value and other
+     * useful information. The relative distance is the distance from the center of the hole to the point, divided by the
+     * distance from the center of the hole to the edge going through the point, all within the "relative space" created
+     * by {@link #findRelativePosition(double[], double[])}.
+     */
+    private RelativeDistanceResult relativeDistance(double[] thePoint) {
         double[] squishPoint = new double[squishCount];
         double[] squishCenter = new double[squishCount];
         for (int i = 0; i < squishCount; i++) {
@@ -431,11 +482,16 @@ public final class Injection {
             double distanceTotal = Math.sqrt(distSquare);
             relativeDistance = distanceToCenter / distanceTotal;
         }
-        return new SquishingResolt(squishCenter, relativeDiffs, relativeDistance);
+        return new RelativeDistanceResult(squishCenter, relativeDiffs, relativeDistance);
     }
 
-    private record SquishingResolt(double[] squishCenter, double[] relativeDiffs, double relativeDistance) {}
+    private record RelativeDistanceResult(double[] squishCenter, double[] relativeDiffs, double relativeDistance) {}
 
+    /**
+     * Calculates a multiplier based on how far from the range a point is in range-based dimensions. Used to transition
+     * gracefully form "squishing" to "no squishing" along the range dimensions, without a hard cutoff or squishing in the
+     * direction of the range dimensions.
+     */
     private double calculateMultiplier(double[] thePoint) {
         double multiplier = 1;
 
@@ -474,6 +530,10 @@ public final class Injection {
         return sum;
     }
 
+    /**
+     * Shrink the volume of this injection by the proper amount so that, in a system with the given sum of original
+     * volumes of injections, this injection will be the same size as same-radius injections injected earlier.
+     */
     @ApiStatus.Internal
     public Injection scale(double totalVolume) {
         return new Injection(
@@ -486,6 +546,10 @@ public final class Injection {
             radius / Math.pow(totalVolume, 1.0 / squishCount));
     }
 
+    /**
+     * Remap the center (and range bounds) of this injection using the given operator - used with {@link #unsquish(double[], Relative.Series)}
+     * to layer injections sensibly.
+     */
     @ApiStatus.Internal
     public Injection remap(UnaryOperator<double[]> operator) {
         double[] center = new double[behaviours.length];
