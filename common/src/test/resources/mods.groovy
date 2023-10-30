@@ -9,8 +9,6 @@ ModsDotGroovy.make {
         modId = this.buildProperties['modid']+'tests'
         displayName = this.buildProperties['modname']+ ' Tests'
         version = this.version
-        group = this.group
-        intermediate_mappings = 'net.fabricmc:intermediary'
         displayUrl = 'https://github.com/lukebemishprojects/BiomeSquisher'
 
         description = 'Test mod for Biome Squisher'

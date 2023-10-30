@@ -6,8 +6,8 @@ parchment_mappings = "2023.09.03"
 fabric_loader = "0.14.24"
 fabric_api = "0.89.3+1.20.2"
 
-#neoforge = "1.20.1-47.1.75"
-#mixin = "0.8.5"
+neoforge = "20.2.4-beta"
+neogradle = "7.0.5"
 
 jetbrains_annotations = "24.0.1"
 autoservice = "1.1.1"
@@ -23,8 +23,7 @@ minecraft = { module = "com.mojang:minecraft", version.ref = "minecraft" }
 fabric_loader = { module = "net.fabricmc:fabric-loader", version.ref = "fabric_loader" }
 fabric_api = { module = "net.fabricmc.fabric-api:fabric-api", version.ref = "fabric_api" }
 
-#neoforge = { module = "net.neoforged:forge", version.ref = "neoforge" }
-#mixin = { module = "org.spongepowered:mixin", version.ref = "mixin" }
+neoforge = { module = "net.neoforged:neoforge", version.ref = "neoforge" }
 
 jetbrains_annotations = { module = "org.jetbrains:annotations", version.ref = "jetbrains_annotations" }
 autoservice = { module = "com.google.auto.service:auto-service", version.ref = "autoservice" }
@@ -35,9 +34,9 @@ mixinextras_common = { module = "io.github.llamalad7:mixinextras-common", versio
 
 [plugins]
 fabric_loom = { id = "fabric-loom", version = "1.4.4" }
-#neogradle = {id = "net.neoforged.gradle", version = "6.0.18"}
+neogradle_userdev = {id = "net.neoforged.gradle.userdev", version.ref = "neogradle" }
+neogradle_mixin = {id = "net.neoforged.gradle.mixin", version.ref = "neogradle" }
 #librarian = {id = "org.parchmentmc.librarian.forgegradle", version = "1.2.0"}
-#mixingradle = {id = "org.spongepowered.mixin", version = "0.7.33"}
 mdg_plugin = {id = "org.groovymc.modsdotgroovy", version = "1.4.3"}
 curseforgegradle = {id = "net.darkhax.curseforgegradle", version = "1.1.16"}
 minotaur = {id = "com.modrinth.minotaur", version = "2.8.1"}

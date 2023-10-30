@@ -1,0 +1,91 @@
+plugins {
+    alias libs.plugins.neogradle.userdev
+    alias libs.plugins.neogradle.mixin
+}
+
+runs {
+    configureEach {
+        systemProperty 'forge.logging.console.level', 'debug'
+        modSource project.sourceSets.main
+    }
+
+    client {
+        systemProperty 'forge.enabledGameTestNamespaces', project.modid
+    }
+
+    server {
+        systemProperty 'forge.enabledGameTestNamespaces', project.modid
+        programArgument '--nogui'
+    }
+
+    gameTestServer {
+        systemProperty 'forge.enabledGameTestNamespaces', project.modid
+    }
+}
+
+mixin {
+    configs.add 'biomesquisher.mixins.json'
+    configs.add 'biomesquisher.test.mixins.json'
+}
+
+jarJar.enable()
+
+dependencies {
+    implementation libs.neoforge
+
+    compileOnly project(":common")
+    testCompileOnly project(":common").sourceSets.test.output
+
+    //minecraftLibrary libs.pngj
+    jarJar(libs.pngj.get()) {
+        jarJar.ranged(it, "[${libs.versions.pngj.get()},)")
+    }
+
+    annotationProcessor libs.mixinextras.common
+    implementation libs.mixinextras.common
+    //annotationProcessor libs.mixinextras.neoforge
+    //implementation libs.mixinextras.neoforge
+    //include libs.mixinextras.neoforge
+
+    testImplementation sourceSets.main.output
+}
+
+processResources {
+    from project(":common").sourceSets.main.resources
+}
+
+tasks.named('compileJava', JavaCompile).configure {
+    source(project(":common").sourceSets.main.allSource)
+}
+
+import io.github.groovymc.modsdotgroovy.ConvertToTomlTask;
+var testMdg = tasks.register('testModsDotGroovyToToml', ConvertToTomlTask) {
+    input.set new File(project(':common').sourceSets.test.resources.srcDirs.find(), "mods.groovy")
+    dependsOn(project(':common').configurations.modsDotGroovy)
+    dslClasspath.from(project(':common').configurations.modsDotGroovy)
+}
+
+processTestResources {
+    dependsOn testMdg
+    exclude 'mods.groovy'
+    from(testMdg.get().output.get().asFile) {
+        into 'META-INF'
+    }
+    from project(":common").sourceSets.test.resources
+}
+
+tasks.named('compileTestJava', JavaCompile).configure {
+    source(project(":common").sourceSets.test.allSource)
+}
+
+sourcesJar {
+    from project(":common").sourceSets.main.allSource
+}
+
+javadocJar {
+    from project(":common").sourceSets.main.allJava
+}
+
+tasks.named('build').configure {
+    dependsOn 'jarJar'
+}

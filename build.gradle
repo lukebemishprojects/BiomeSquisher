@@ -57,7 +57,7 @@ modsDotGroovy {
     platform 'multiloader'
     multiloader {
         common = project(':common')
-        forge = []
+        forge = [project(':neoforge')]
         fabric = [project(':fabric')]
         quilt = []
     }

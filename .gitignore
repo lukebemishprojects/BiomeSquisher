@@ -28,9 +28,11 @@ bin/
 
 *.DS_Store
 
-# fabric
+# minecraft
 
 run/
+runs/
+runserver/
 
 # java
 

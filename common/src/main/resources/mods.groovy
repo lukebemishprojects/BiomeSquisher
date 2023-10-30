@@ -9,19 +9,20 @@ ModsDotGroovy.make {
         modId = this.buildProperties['modid']
         displayName = this.buildProperties['modname']
         version = this.version
-        group = this.group
-        intermediate_mappings = 'net.fabricmc:intermediary'
         displayUrl = 'https://github.com/lukebemishprojects/BiomeSquisher'
 
         description = 'Squishes biomes to make room! Very WIP.'
         authors = [this.buildProperties['modauthor'] as String]
 
         dependencies {
-            minecraft = this.minecraftVersionRange
+            mod 'minecraft', {
+                def minor = this.libs.versions.minecraft.split(/\./)[1] as int
+                versionRange = "[${this.libs.versions.minecraft},1.${minor+1}.0)"
+            }
 
             onForge {
-                forge {
-                    versionRange = ">=${this.forgeVersion}"
+                mod 'neoforge', {
+                    versionRange = ">=${this.libs.versions.neoforge}"
                 }
             }
 
