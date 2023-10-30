@@ -1,0 +1,16 @@
+{
+	"required": true,
+	"package": "dev.lukebemish.biomesquisher.impl.mixin",
+	"compatibilityLevel": "JAVA_17",
+	"mixins": [
+    "MultiNoiseBiomeSourceAccessor",
+    "NoiseBasedChunkGeneratorAccessor",
+    "ParameterListMixin",
+    "MinecraftServerMixin",
+    "MultiNoiseBiomeSourceMixin"
+  ],
+	"injectors": {
+		"defaultRequire": 1
+	},
+  "refmap": "biomesquisher.refmap.json"
+}

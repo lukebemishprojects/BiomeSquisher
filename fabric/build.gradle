@@ -1,0 +1,92 @@
+apply plugin: 'fabric-loom'
+
+loom {
+    runs.configureEach {
+        source = sourceSets.test
+    }
+
+    runs {
+        gametest {
+            inherit server
+            name "Game Test"
+            vmArg "-Dfabric-api.gametest"
+            vmArg "-Dfabric-api.gametest.report-file=${project.layout.buildDirectory}/junit.xml"
+            runDir "build/gametest"
+        }
+    }
+
+    runs.configureEach {
+        name = 'Fabric: ' + name
+        ideConfigGenerated = true
+    }
+
+    mixin {
+        defaultRefmapName = 'biomesquisher.refmap.json'
+    }
+}
+
+dependencies {
+    minecraft libs.minecraft
+    mappings loom.layered() {
+        officialMojangMappings()
+        parchment("org.parchmentmc.data:parchment-${libs.versions.parchment.minecraft.get()}:${libs.versions.parchment.mappings.get()}@zip")
+    }
+    modImplementation libs.fabric.loader
+    modImplementation libs.fabric.api
+
+    include libs.pngj
+
+    annotationProcessor libs.mixinextras.fabric
+    implementation libs.mixinextras.fabric
+    include libs.mixinextras.fabric
+
+    testImplementation sourceSets.main.output
+
+    compileOnly project(":common")
+    testCompileOnly project(":common").sourceSets.test.output
+}
+
+processResources {
+    from project(":common").sourceSets.main.resources
+}
+
+tasks.named('compileJava', JavaCompile).configure {
+    source(project(":common").sourceSets.main.allSource)
+}
+
+import io.github.groovymc.modsdotgroovy.ConvertToFabricJsonTask;
+var testMdg = tasks.register('testModsDotGroovyToFabricJson', ConvertToFabricJsonTask) {
+    input.set new File(project(':common').sourceSets.test.resources.srcDirs.find(), "mods.groovy")
+    dependsOn(project(':common').configurations.modsDotGroovy)
+    dslClasspath.from(project(':common').configurations.modsDotGroovy)
+}
+
+processTestResources {
+    dependsOn testMdg
+    exclude 'mods.groovy'
+    from(testMdg.get().output.get().asFile) {
+        into ''
+    }
+    from project(":common").sourceSets.test.resources
+}
+
+tasks.named('compileTestJava', JavaCompile).configure {
+    source(project(":common").sourceSets.test.allSource)
+}
+
+sourcesJar {
+    from project(":common").sourceSets.main.allSource
+}
+
+javadocJar {
+    from project(":common").sourceSets.main.allJava
+}
+
+// configure the maven publication
+publishing {
+    publications {
+        mavenJava(MavenPublication) {
+            from components.java
+        }
+    }
+}

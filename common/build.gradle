@@ -1,0 +1,40 @@
+apply plugin: 'fabric-loom'
+
+loom {
+    runs.configureEach {
+        ideConfigGenerated = false
+    }
+}
+
+configurations {
+    compileOnly.extendsFrom modsDotGroovy
+    testCompileOnly.extendsFrom modsDotGroovy
+}
+
+dependencies {
+    minecraft libs.minecraft
+    mappings loom.layered() {
+        officialMojangMappings()
+        parchment("org.parchmentmc.data:parchment-${libs.versions.parchment.minecraft.get()}:${libs.versions.parchment.mappings.get()}@zip")
+    }
+    modCompileOnly libs.fabric.loader
+
+    annotationProcessor libs.mixinextras.common
+    implementation libs.mixinextras.common
+
+    testImplementation sourceSets.main.output
+}
+
+import net.fabricmc.loom.task.AbstractRemapJarTask
+tasks.withType(AbstractRemapJarTask).each {
+    it.targetNamespace = "named"
+}
+
+// configure the maven publication
+publishing {
+    publications {
+        mavenJava(MavenPublication) {
+            from components.java
+        }
+    }
+}

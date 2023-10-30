@@ -1,115 +1,65 @@
 plugins {
-    id 'fabric-loom' version '1.4.1'
-    id 'maven-publish'
+    alias libs.plugins.mdg.plugin
+    alias libs.plugins.fabric.loom apply false
 }
 
-base {
-    archivesName = project.modid
-}
+allprojects { p ->
+    apply plugin: 'java-library'
+    apply plugin: 'maven-publish'
 
-repositories {
-    maven {
-        name = 'ParchmentMC'
-        url = 'https://maven.parchmentmc.org'
+    group = rootProject.group
+    version = rootProject.version
+    base.archivesName = "${rootProject.name}-${p.name.toLowerCase(Locale.ROOT)}-${libs.versions.minecraft.get()}"
+
+    java.toolchain.languageVersion = JavaLanguageVersion.of(17)
+    java.withSourcesJar()
+    java.withJavadocJar()
+
+    javadoc {
+        include "**/api/**"
     }
-}
 
-loom {
-    runs.configureEach {
-        source = sourceSets.test
-    }
-
-    runs {
-        gametest {
-            inherit server
-            name "Game Test"
-            vmArg "-Dfabric-api.gametest"
-            vmArg "-Dfabric-api.gametest.report-file=${project.layout.buildDirectory}/junit.xml"
-            runDir "build/gametest"
+    jar {
+        manifest {
+            attributes([
+                'Specification-Title'     : rootProject.modname,
+                'Specification-Vendor'    : rootProject.modauthor,
+                'Specification-Version'   : rootProject.version,
+                //'Implementation-Commit-Time': versioning.getGitCommitDate(),
+                //'Implementation-Commit': versioning.getGitCommit(),
+                'Build-On-Minecraft'      : libs.versions.minecraft.get(),
+            ])
         }
-    }
-}
 
-dependencies {
-    minecraft "com.mojang:minecraft:${project.minecraft_version}"
-    mappings loom.layered() {
-        officialMojangMappings()
-        parchment("org.parchmentmc.data:parchment-1.20.1:2023.09.03@zip")
-    }
-    modImplementation "net.fabricmc:fabric-loader:${project.loader_version}"
-
-    modImplementation "net.fabricmc.fabric-api:fabric-api:${project.fabric_version}"
-
-    include(implementation('ar.com.hjg:pngj:2.1.0'))
-    include(implementation(annotationProcessor("io.github.llamalad7:mixinextras-fabric:0.2.0-rc.5")))
-
-    testImplementation sourceSets.main.output
-}
-
-processResources {
-    inputs.property "version", project.version
-
-    filesMatching("fabric.mod.json") {
-        expand "version": project.version
-    }
-}
-
-processTestResources {
-    inputs.property "version", project.version
-
-    filesMatching("fabric.mod.json") {
-        expand "version": project.version
-    }
-}
-
-tasks.register('testJar', Jar) {
-    from(sourceSets.test.output)
-    it.archiveClassifier.set 'test-dev'
-}
-
-import net.fabricmc.loom.task.RemapJarTask
-
-tasks.register('remapTestJar', RemapJarTask) {
-    it.targetNamespace = "intermediary"
-    it.inputFile = tasks.testJar.archiveFile
-    it.dependsOn tasks.testJar
-    it.archiveClassifier.set 'test'
-    it.addNestedDependencies = false
-}
-
-tasks.withType(JavaCompile).configureEach {
-    it.options.release = 17
-}
-
-java {
-    // Loom will automatically attach sourcesJar to a RemapSourcesJar task and to the "build" task
-    // if it is present.
-    // If you remove this line, sources will not be generated.
-    withSourcesJar()
-
-    sourceCompatibility = JavaVersion.VERSION_17
-    targetCompatibility = JavaVersion.VERSION_17
-}
-
-jar {
-    from("LICENSE") {
-        rename { "${it}-${project.base.archivesName.get()}"}
-    }
-}
-
-// configure the maven publication
-publishing {
-    publications {
-        mavenJava(MavenPublication) {
-            from components.java
+        from("LICENSE") {
+            rename { "${it}-${rootProject.name}"}
         }
     }
 
-    // See https://docs.gradle.org/current/userguide/publishing_maven.html for information on how to set up publishing.
     repositories {
-        // Add repositories to publish to here.
-        // Notice: This block does NOT have the same function as the block in the top level.
-        // The repositories here will be used for publishing your artifact, not for
-        // retrieving dependencies.
+        mavenCentral()
+        maven {
+            name = 'ParchmentMC'
+            url = 'https://maven.parchmentmc.org'
+        }
     }
+
+    dependencies {
+        compileOnly libs.jetbrains.annotations
+        implementation libs.pngj
+        compileOnly libs.autoservice
+        annotationProcessor libs.autoservice
+    }
+}
+
+modsDotGroovy {
+    dslVersion = libs.versions.mdg.dsl.get()
+    platform 'multiloader'
+    multiloader {
+        common = project(':common')
+        forge = []
+        fabric = [project(':fabric')]
+        quilt = []
+    }
+    source.set project(':common').sourceSets.main
 }
