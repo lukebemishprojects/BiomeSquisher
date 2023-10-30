@@ -7,6 +7,7 @@ import com.mojang.brigadier.arguments.StringArgumentType;
 import com.mojang.brigadier.context.CommandContext;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import com.mojang.brigadier.exceptions.SimpleCommandExceptionType;
+import dev.lukebemish.biomesquisher.impl.dump.BiomeDumper;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.commands.Commands;
 import net.minecraft.commands.SharedSuggestionProvider;
@@ -33,10 +34,10 @@ public class BiomeSquisherCommands {
                         .requires(commandSourceStack -> commandSourceStack.hasPermission(4))
                         .then(
                             Commands.argument("x", StringArgumentType.word())
-                                .suggests((c, builder) -> SharedSuggestionProvider.suggest(BiomeDumper.Dimension.EXAMPLES, builder))
+                                .suggests((c, builder) -> SharedSuggestionProvider.suggest(BiomeDumper.EXAMPLES, builder))
                                 .then(
                                     Commands.argument("y", StringArgumentType.word())
-                                        .suggests((c, builder) -> SharedSuggestionProvider.suggest(BiomeDumper.Dimension.EXAMPLES, builder))
+                                        .suggests((c, builder) -> SharedSuggestionProvider.suggest(BiomeDumper.EXAMPLES, builder))
                                         .then(
                                             Commands.argument("i", FloatArgumentType.floatArg(-1, 1))
                                                 .then(
@@ -47,15 +48,15 @@ public class BiomeSquisherCommands {
                                                                     Commands.argument("l", FloatArgumentType.floatArg(-1, 1))
                                                                         .executes(
                                                                             commandContext -> {
-                                                                                BiomeDumper.Dimension x;
-                                                                                BiomeDumper.Dimension y;
+                                                                                Dimension x;
+                                                                                Dimension y;
                                                                                 try {
-                                                                                    x = BiomeDumper.Dimension.valueOf(commandContext.getArgument("x", String.class).toUpperCase(Locale.ROOT));
+                                                                                    x = Dimension.valueOf(commandContext.getArgument("x", String.class).toUpperCase(Locale.ROOT));
                                                                                 } catch (IllegalArgumentException e) {
                                                                                     throw CommandSyntaxException.BUILT_IN_EXCEPTIONS.literalIncorrect().create(commandContext.getArgument("x", String.class));
                                                                                 }
                                                                                 try {
-                                                                                    y = BiomeDumper.Dimension.valueOf(commandContext.getArgument("y", String.class).toUpperCase(Locale.ROOT));
+                                                                                    y = Dimension.valueOf(commandContext.getArgument("y", String.class).toUpperCase(Locale.ROOT));
                                                                                 } catch (IllegalArgumentException e) {
                                                                                     throw CommandSyntaxException.BUILT_IN_EXCEPTIONS.literalIncorrect().create(commandContext.getArgument("y", String.class));
                                                                                 }
@@ -80,7 +81,7 @@ public class BiomeSquisherCommands {
         );
     }
 
-    private static int exportFor(CommandContext<CommandSourceStack> commandContext, BiomeDumper.Dimension x, BiomeDumper.Dimension y, BiomeDumper.SliceLocation location) throws CommandSyntaxException {
+    private static int exportFor(CommandContext<CommandSourceStack> commandContext, Dimension x, Dimension y, BiomeDumper.SliceLocation location) throws CommandSyntaxException {
         var biomeSource = commandContext.getSource().getLevel().getChunkSource().getGenerator().getBiomeSource();
 
         if (!(biomeSource instanceof MultiNoiseBiomeSource multiNoiseBiomeSource)) {
@@ -88,7 +89,7 @@ public class BiomeSquisherCommands {
         }
 
         try {
-            BiomeDumper.dump(commandContext.getSource().getLevel(), multiNoiseBiomeSource, x, y, location);
+            BiomeDumper.dumpPng(commandContext.getSource().getLevel(), multiNoiseBiomeSource, x, y, location);
         } catch (IOException e) {
             Utils.LOGGER.error("Failed to save biome dump", e);
             throw ERROR_SAVING_DUMP.create();

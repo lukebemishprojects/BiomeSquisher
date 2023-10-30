@@ -1,10 +1,8 @@
 package dev.lukebemish.biomesquisher.impl.mixin;
 
 import com.mojang.datafixers.DataFixer;
+import dev.lukebemish.biomesquisher.impl.BiomeSquisherMod;
 import dev.lukebemish.biomesquisher.impl.Utils;
-import dev.lukebemish.biomesquisher.impl.Squishers;
-import dev.lukebemish.biomesquisher.impl.injected.Squishable;
-import net.minecraft.core.Holder;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.server.MinecraftServer;
@@ -15,8 +13,6 @@ import net.minecraft.server.packs.repository.PackRepository;
 import net.minecraft.world.level.biome.MultiNoiseBiomeSource;
 import net.minecraft.world.level.dimension.LevelStem;
 import net.minecraft.world.level.levelgen.NoiseBasedChunkGenerator;
-import net.minecraft.world.level.levelgen.NoiseGeneratorSettings;
-import net.minecraft.world.level.levelgen.NoiseRouter;
 import net.minecraft.world.level.storage.LevelStorageSource;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
@@ -48,34 +44,16 @@ public class MinecraftServerMixin {
         var registry = access.registry(Registries.LEVEL_STEM).orElseThrow();
         registry.forEach(value -> {
             ResourceKey<LevelStem> key = registry.getResourceKey(value).orElseThrow();
-            Utils.LOGGER.info("Attempting to squish {}", key.location());
             if (value.generator() instanceof NoiseBasedChunkGenerator generator) {
                 var biomeSource = generator.getBiomeSource();
                 if (biomeSource instanceof MultiNoiseBiomeSource multiNoiseBiomeSource) {
-                    var parameters = ((MultiNoiseBiomeSourceAccessor) multiNoiseBiomeSource).biomesquisher_parameters();
-                    ((Squishable) parameters).biomesquisher_squish(key, access, worldStem.resourceManager());
-                    Squishers squishers = ((Squishable) parameters).biomesquisher_squishers();
-                    if (squishers != null && squishers.needsSpacialScaling()) {
-                        NoiseGeneratorSettings settings = generator.generatorSettings().value();
-                        NoiseRouter router = settings.noiseRouter();
-                        NoiseRouter newRouter = squishers.wrap(router);
-                        @SuppressWarnings("deprecation") NoiseGeneratorSettings newSettings = new NoiseGeneratorSettings(
-                            settings.noiseSettings(),
-                            settings.defaultBlock(),
-                            settings.defaultFluid(),
-                            newRouter,
-                            settings.surfaceRule(),
-                            settings.spawnTarget(),
-                            settings.seaLevel(),
-                            settings.disableMobGeneration(),
-                            settings.aquifersEnabled(),
-                            settings.oreVeinsEnabled(),
-                        settings.useLegacyRandomSource()
-                        );
-                        //noinspection DataFlowIssue
-                        ((NoiseBasedChunkGeneratorAccessor) (Object) generator).biomesquisher_setGenerationSettings(Holder.direct(newSettings));
-                    }
+                    Utils.LOGGER.info("Squishing biomes in {}", key.location());
+                    BiomeSquisherMod.squishBiomeSource(worldStem.resourceManager(), generator, multiNoiseBiomeSource, key, access);
+                } else {
+                    Utils.LOGGER.info("Not squishing {}; not a MultiNoiseBiomeSource", key.location());
                 }
+            } else {
+                Utils.LOGGER.info("Not squishing {}; not a NoiseBasedChunkGenerator", key.location());
             }
         });
     }

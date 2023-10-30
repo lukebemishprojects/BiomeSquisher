@@ -1,0 +1,10 @@
+{
+  "x": "temperature",
+  "y": "continentalness",
+  "slice": [
+    0.15,
+    -0.3,
+    -0.3,
+    0.2
+  ]
+}

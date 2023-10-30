@@ -10,6 +10,14 @@
 	"license": "BSD-3-clause",
 	"environment": "*",
 	"entrypoints": {
-		"main": []
-	}
+    "fabric-gametest": [
+      "dev.lukebemish.biomesquisher.test.BiomeSquisherGameTests"
+    ],
+    "main": [
+      "dev.lukebemish.biomesquisher.test.BiomeSquisherTest"
+    ]
+	},
+  "mixins": [
+    "biomesquisher.test.mixins.json"
+  ]
 }

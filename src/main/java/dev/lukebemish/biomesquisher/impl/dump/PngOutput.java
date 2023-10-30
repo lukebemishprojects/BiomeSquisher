@@ -1,17 +1,15 @@
-package dev.lukebemish.biomesquisher.impl;
+package dev.lukebemish.biomesquisher.impl.dump;
 
 import ar.com.hjg.pngj.ImageInfo;
 import ar.com.hjg.pngj.ImageLineHelper;
 import ar.com.hjg.pngj.ImageLineInt;
 import ar.com.hjg.pngj.PngWriter;
-import dev.lukebemish.biomesquisher.impl.mixin.MultiNoiseBiomeSourceAccessor;
 import net.fabricmc.loader.api.FabricLoader;
 import net.minecraft.core.Holder;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.biome.Biome;
-import net.minecraft.world.level.biome.Climate;
-import net.minecraft.world.level.biome.MultiNoiseBiomeSource;
+import org.apache.logging.log4j.util.TriConsumer;
 
 import java.io.IOException;
 import java.io.OutputStream;
@@ -21,59 +19,39 @@ import java.nio.file.Path;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.*;
+import java.util.function.BiConsumer;
+import java.util.function.BiFunction;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
-public class BiomeDumper {
-    public enum Dimension {
-        TEMPERATURE(0),
-        HUMIDITY(1),
-        CONTINENTALNESS(2),
-        EROSION(3),
-        DEPTH(4),
-        WEIRDNESS(5);
-
-        public static final String[] EXAMPLES = Arrays.stream(values()).map(v -> v.name().toLowerCase(Locale.ROOT)).toArray(String[]::new);
-        private final int index;
-
-        Dimension(int index) {
-            this.index = index;
-        }
-
-        public int index() {
-            return index;
-        }
-    }
-
+public final class PngOutput implements BiomeDumper.Output {
     private static final DateFormat DATE_FORMAT = new SimpleDateFormat("yyyy.MM.dd.HH.mm.ss", Locale.ROOT);
+    public static final PngOutput INSTANCE = new PngOutput();
 
-    public record SliceLocation(float i, float j, float k, float l) {
-        public long getAt(int index) {
-            float val = switch (index) {
-                case 0 -> i;
-                case 1 -> j;
-                case 2 -> k;
-                case 3 -> l;
-                default -> throw new IllegalArgumentException("Invalid index: " + index);
-            };
-            return Climate.quantizeCoord(val);
+    private PngOutput() {}
+
+    public <T> Map<ResourceKey<Biome>, Integer> dumpImage(BiFunction<Float, Float, Holder<Biome>> biomeGetter, Set<Holder<Biome>> possibleBiomes, Function<Integer, T> makeRow, BiConsumer<Integer, T> writeRow, TriConsumer<T, Integer, Integer> writeValue) {
+        Map<ResourceKey<Biome>, Integer> hash = possibleBiomes.stream().map(h -> h.unwrapKey().orElse(null)).filter(Objects::nonNull)
+            .collect(Collectors.toMap(Function.identity(), BiomeDumper::hashBiome));
+        for (int i = 0; i < 1024; i++) {
+            T line = makeRow.apply(i);
+            for (int j = 0; j < 1024; j++) {
+                int finalJ = j;
+                biomeGetter.apply(i/512f - 1, j/512f - 1)
+                    .unwrapKey().ifPresent(key -> {
+                        int color = hash.getOrDefault(key, 0);
+                        writeValue.accept(line, finalJ, color);
+                    });
+            }
+            writeRow.accept(i, line);
         }
+        return hash;
     }
 
-    public static void dump(Level level, MultiNoiseBiomeSource source, Dimension x, Dimension y, SliceLocation location) throws IOException {
-        Climate.ParameterList<Holder<Biome>> parameters = ((MultiNoiseBiomeSourceAccessor) source).biomesquisher_parameters();
-        Map<ResourceKey<Biome>, Integer> hash = source.possibleBiomes().stream().map(h -> h.unwrapKey().orElse(null)).filter(Objects::nonNull)
-            .collect(Collectors.toMap(Function.identity(), BiomeDumper::hashBiome));
-        long[] indices = new long[6];
-        int indexed = 0;
-        for (int i = 0; i < 6; i++) {
-            if (i == x.index() || i == y.index()) {
-                continue;
-            }
-            indices[i] = location.getAt(indexed);
-            indexed += 1;
-        }
+    @Override
+    public void dump(Level level, BiFunction<Float, Float, Holder<Biome>> biomeGetter, Set<Holder<Biome>> possibleBiomes) throws IOException {
         var now = new Date();
+        Map<ResourceKey<Biome>, Integer> hash;
         Path outputDir = FabricLoader.getInstance().getGameDir().resolve("dumps").resolve("biomesquisher");
         String levelId = level.dimensionTypeId().location().getNamespace() + "." + level.dimensionTypeId().location().getPath();
         Path output = outputDir.resolve(levelId + "." + DATE_FORMAT.format(now) + ".png");
@@ -84,22 +62,13 @@ public class BiomeDumper {
             PngWriter writer = new PngWriter(os, new ImageInfo(
                 1024, 1024, 8, true
             ));
-            for (int i = 0; i < 1024; i++) {
-
-                ImageLineInt line = new ImageLineInt(writer.imgInfo);
-                for (int j = 0; j < 1024; j++) {
-                    indices[x.index()] = Climate.quantizeCoord(i/512f - 1);
-                    indices[y.index()] = Climate.quantizeCoord(j/512f - 1);
-                    int finalJ = j;
-                    parameters.findValue(new Climate.TargetPoint(
-                        indices[0], indices[1], indices[2], indices[3], indices[4], indices[5]
-                    )).unwrapKey().ifPresent(key -> {
-                        int color = hash.getOrDefault(key, 0);
-                        ImageLineHelper.setPixelRGBA8(line, finalJ, (color >> 16) & 0xFF, (color >> 8) & 0xFF, color & 0xFF, (color >> 24) & 0xFF);
-                    });
-                }
-                writer.writeRow(line);
-            }
+            hash = dumpImage(
+                biomeGetter,
+                possibleBiomes,
+                i -> new ImageLineInt(writer.imgInfo),
+                (i, line) -> writer.writeRow(line),
+                (line, j, color) -> ImageLineHelper.setPixelRGBA8(line, j, (color >> 16) & 0xFF, (color >> 8) & 0xFF, color & 0xFF, (color >> 24) & 0xFF)
+            );
             writer.end();
         }
         try (var writer = new OutputStreamWriter(Files.newOutputStream(outputKey))) {
@@ -125,9 +94,5 @@ public class BiomeDumper {
             }
             writer.write("</tbody></table></body></html>");
         }
-    }
-
-    public static int hashBiome(ResourceKey<Biome> key) {
-        return (key.location().hashCode() & 0xFFFFFF) | 0xFF000000;
     }
 }
