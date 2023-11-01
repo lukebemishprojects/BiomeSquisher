@@ -1,0 +1,11 @@
+{
+  "levels": [
+    "minecraft:overworld"
+  ],
+  "squishers": [
+    "biomesquishertests:crimson_forest",
+    "biomesquishertests:soul_sand_valley",
+    "biomesquishertests:basalt_deltas",
+    "biomesquishertests:warped_forest"
+  ]
+}

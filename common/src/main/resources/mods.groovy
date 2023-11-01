@@ -1,6 +1,6 @@
 ModsDotGroovy.make {
     modLoader = 'javafml'
-    loaderVersion = '[40,)'
+    loaderVersion = '[1,)'
 
     license = 'BSD-3-clause'
     issueTrackerUrl = 'https://github.com/lukebemishprojects/BiomeSquisher/issues'

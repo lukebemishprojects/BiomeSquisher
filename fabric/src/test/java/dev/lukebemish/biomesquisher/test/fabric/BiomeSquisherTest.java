@@ -1,11 +1,11 @@
 package dev.lukebemish.biomesquisher.test.fabric;
 
+import dev.lukebemish.biomesquisher.test.TestLayoutReloadListener;
 import net.fabricmc.api.ModInitializer;
 import net.fabricmc.fabric.api.resource.IdentifiableResourceReloadListener;
 import net.fabricmc.fabric.api.resource.ResourceManagerHelper;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.packs.PackType;
-import dev.lukebemish.biomesquisher.test.TestLayoutReloadListener;
 
 public class BiomeSquisherTest implements ModInitializer {
     @Override

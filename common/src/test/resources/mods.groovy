@@ -1,6 +1,6 @@
 ModsDotGroovy.make {
     modLoader = 'javafml'
-    loaderVersion = '[40,)'
+    loaderVersion = '[1,)'
 
     license = 'BSD-3-clause'
     issueTrackerUrl = 'https://github.com/lukebemishprojects/BiomeSquisher/issues'
@@ -19,8 +19,7 @@ ModsDotGroovy.make {
                 'dev.lukebemish.biomesquisher.test.fabric.BiomeSquisherTest'
             ]
             entrypoint 'fabric-gametest', [
-                'dev.lukebemish.biomesquisher.test.BiomeSquisherGameTests',
-                'dev.lukebemish.biomesquisher.test.fabric.BiomeSquisherFabricGameTests'
+                'dev.lukebemish.biomesquisher.test.BiomeSquisherGameTests'
             ]
         }
 

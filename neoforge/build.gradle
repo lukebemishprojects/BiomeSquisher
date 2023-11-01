@@ -3,51 +3,64 @@ plugins {
     alias libs.plugins.neogradle.mixin
 }
 
+sourceSets {
+    main.runs.modIdentifier = project.modid
+    test.runs.modIdentifier = project.modid+'tests'
+}
+
 runs {
     configureEach {
         systemProperty 'forge.logging.console.level', 'debug'
-        modSource project.sourceSets.main
+        programArguments.addAll '--mixin.config', 'biomesquisher.test.mixins.json'
+        modSources.add project.sourceSets.main
+        modSources.add project.sourceSets.test
     }
 
-    client {
-        systemProperty 'forge.enabledGameTestNamespaces', project.modid
-    }
+    client {}
 
     server {
-        systemProperty 'forge.enabledGameTestNamespaces', project.modid
         programArgument '--nogui'
     }
 
     gameTestServer {
-        systemProperty 'forge.enabledGameTestNamespaces', project.modid
+        programArgument '--nogui'
     }
 }
 
 mixin {
     configs.add 'biomesquisher.mixins.json'
-    configs.add 'biomesquisher.test.mixins.json'
 }
 
 jarJar.enable()
+
+configurations {
+    minecraftLibrary
+    minecraftRuntime
+    implementation.extendsFrom minecraftLibrary
+    minecraftRuntime.extendsFrom minecraftLibrary
+}
 
 dependencies {
     implementation libs.neoforge
 
     compileOnly project(":common")
+    testCompileOnly project(":common")
     testCompileOnly project(":common").sourceSets.test.output
 
-    //minecraftLibrary libs.pngj
+    minecraftLibrary libs.pngj
     jarJar(libs.pngj.get()) {
         jarJar.ranged(it, "[${libs.versions.pngj.get()},)")
     }
 
-    annotationProcessor libs.mixinextras.common
-    implementation libs.mixinextras.common
-    //annotationProcessor libs.mixinextras.neoforge
-    //implementation libs.mixinextras.neoforge
-    //include libs.mixinextras.neoforge
+    jarJar(libs.mixinextras.neoforge.get()) {
+        jarJar.ranged(it, "[${libs.versions.mixinextras.get()},)")
+    }
+    implementation libs.mixinextras.neoforge
+}
 
-    testImplementation sourceSets.main.output
+import net.neoforged.gradle.userdev.runtime.tasks.ClasspathSerializer
+tasks.withType(ClasspathSerializer).configureEach {
+    it.inputFiles.from(configurations.minecraftRuntime)
 }
 
 processResources {

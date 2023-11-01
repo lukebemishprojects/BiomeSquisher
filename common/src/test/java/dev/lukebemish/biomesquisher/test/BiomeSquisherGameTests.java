@@ -6,6 +6,7 @@ import dev.lukebemish.biomesquisher.impl.dump.BiomeDumper;
 import dev.lukebemish.biomesquisher.impl.dump.PngOutput;
 import net.minecraft.core.Holder;
 import net.minecraft.core.registries.Registries;
+import net.minecraft.gametest.framework.GameTest;
 import net.minecraft.gametest.framework.GameTestHelper;
 import net.minecraft.server.packs.resources.ResourceManager;
 import net.minecraft.world.level.Level;
@@ -18,7 +19,8 @@ import java.io.IOException;
 
 public class BiomeSquisherGameTests {
 
-    public static void testLayouts(GameTestHelper context) {
+    @GameTest(template = "biomesquishertests:empty")
+    public void testLayouts(GameTestHelper context) {
         var multiNoiseBiomeSource = getOverworldBiomeList(context.getLevel(), context.getLevel().getServer().getResourceManager());
         for (LayoutTest test : TestLayoutReloadListener.LAYOUTS) {
             int[][] data = new int[1024][];

@@ -48,6 +48,7 @@ dependencies {
     testImplementation sourceSets.main.output
 
     compileOnly project(":common")
+    testCompileOnly project(":common")
     testCompileOnly project(":common").sourceSets.test.output
 }
 

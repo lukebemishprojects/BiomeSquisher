@@ -31,6 +31,7 @@ pngj = { module = "ar.com.hjg:pngj", version.ref = "pngj" }
 
 mixinextras_fabric = { module = "io.github.llamalad7:mixinextras-fabric", version.ref = "mixinextras" }
 mixinextras_common = { module = "io.github.llamalad7:mixinextras-common", version.ref = "mixinextras" }
+mixinextras_neoforge = { module = "io.github.llamalad7:mixinextras-neoforge", version.ref = "mixinextras" }
 
 [plugins]
 fabric_loom = { id = "fabric-loom", version = "1.4.4" }
