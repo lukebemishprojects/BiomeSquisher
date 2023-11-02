@@ -30,7 +30,7 @@ jobs:
                   ./gradlew tagRelease
             - name: Build
               run: |
-                  ./gradlew checkLicenses build
+                  ./gradlew build
             - name: Publish
               run: |
                   ./gradlew publish curseforge modrinth

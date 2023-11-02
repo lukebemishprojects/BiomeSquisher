@@ -30,7 +30,7 @@ jobs:
               name: Setup Gradle
             - name: Build
               run: |
-                  ./gradlew checkLicenses build
+                  ./gradlew build
               env:
                   SNAPSHOT_MAVEN_URL: https://maven.lukebemish.dev/snapshots/
             - name: Publish

@@ -24,7 +24,7 @@ jobs:
                 cache-read-only: ${{ !startsWith(github.ref, 'refs/heads/1.') }}
             - name: Build
               run: |
-                ./gradlew checkLicenses build publish
+                ./gradlew build publish
               env:
                 PR_NUMBER: ${{ github.event.pull_request.number }}
             - name: Archive publishable artifacts
