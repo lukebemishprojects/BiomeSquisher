@@ -7,7 +7,7 @@ fabric_loader = "0.14.24"
 fabric_api = "0.89.3+1.20.2"
 
 neoforge = "20.2.4-beta"
-neogradle = "7.0.5"
+neogradle = "7.0.21"
 
 jetbrains_annotations = "24.0.1"
 autoservice = "1.1.1"
