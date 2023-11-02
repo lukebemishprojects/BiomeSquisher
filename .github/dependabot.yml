@@ -1,0 +1,45 @@
+version: 2
+registries:
+  maven-central:
+    type: maven-repository
+    url: https://repo.maven.apache.org/maven2/
+  fabricmc:
+    type: maven-repository
+    url: https://maven.fabricmc.net/
+  quiltmc:
+    type: maven-repository
+    url: https://maven.quiltmc.org/repository/release/
+  parchment:
+    type: maven-repository
+    url: https://maven.parchmentmc.org/
+  neoforge:
+    type: maven-repository
+    url: https://maven.neoforged.net/
+  lukebemish:
+      type: maven-repository
+      url: https://maven.lukebemish.dev/
+updates:
+  - package-ecosystem: "gradle"
+    directory: "/"
+    registries:
+      - maven-central
+      - fabricmc
+      - quiltmc
+      - parchment
+      - neoforge
+      - lukebemish
+    schedule:
+      interval: "weekly"
+    ignore:
+      - dependency-name: "*modsdotgroovy*"
+        update-types: ["version-update:semver-major"]
+      - dependency-name: "com.mojang:minecraft"
+        update-types: ["version-update:semver-major"]
+      - dependency-name: "*neoforge*"
+        update-types: ["version-update:semver-major"]
+      - dependency-name: "net.fabricmc*"
+        update-types: ["version-update:semver-major"]
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"

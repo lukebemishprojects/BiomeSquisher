@@ -9,6 +9,10 @@ pluginManagement {
             name = 'NeoForged'
             url = 'https://maven.neoforged.net/releases'
         }
+        maven {
+            name = "Luke's Maven"
+            url = 'https://maven.lukebemish.dev/releases/'
+        }
 	}
 }
 

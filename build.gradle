@@ -1,11 +1,35 @@
 plugins {
     alias libs.plugins.mdg.plugin
     alias libs.plugins.fabric.loom apply false
+    alias libs.plugins.managedversioning
+    alias libs.plugins.nexuspublish
 }
 
-allprojects { p ->
+managedVersioning {
+    versionFile.set rootProject.file('version.properties')
+    metadataVersion.set libs.versions.minecraft
+    def fullSuffix = ''
+    if (rootProject.releasetype != 'release') {
+        fullSuffix += "-${rootProject.releasetype}"
+    }
+    if (System.getenv('PR_NUMBER')) {
+        fullSuffix += "-pr${System.getenv('PR_NUMBER')}"
+    } else if (System.getenv('SNAPSHOT_MAVEN_URL')) {
+        fullSuffix += '-SNAPSHOT'
+    }
+    if (!fullSuffix.isEmpty()) {
+        suffix.set(fullSuffix.substring(1))
+    }
+}
+
+managedVersioning.apply()
+
+println "Building: ${rootProject.version}"
+
+subprojects { p ->
     apply plugin: 'java-library'
     apply plugin: 'maven-publish'
+    apply plugin: 'signing'
 
     group = rootProject.group
     version = rootProject.version
@@ -25,8 +49,11 @@ allprojects { p ->
                 'Specification-Title'     : rootProject.modname,
                 'Specification-Vendor'    : rootProject.modauthor,
                 'Specification-Version'   : rootProject.version,
-                //'Implementation-Commit-Time': versioning.getGitCommitDate(),
-                //'Implementation-Commit': versioning.getGitCommit(),
+                'Implementation-Title'    : "$modname - ${project.name}",
+                'Implementation-Version'  : rootProject.version,
+                'Implementation-Vendor'   : rootProject.modauthor,
+                'Implementation-Commit-Time': managedVersioning.timestamp.get(),
+                'Implementation-Commit': managedVersioning.hash.get(),
                 'Build-On-Minecraft'      : libs.versions.minecraft.get(),
             ])
         }
@@ -49,6 +76,81 @@ allprojects { p ->
         implementation libs.pngj
         compileOnly libs.autoservice
         annotationProcessor libs.autoservice
+    }
+
+    publishing {
+        publications {
+            mavenJava(MavenPublication) {
+                from components.java
+                artifactId base.archivesName.get()
+
+                pom {
+                    name = "${rootProject.modname} - ${project.name}"
+                    packaging = 'jar'
+                    description = 'Modding library for the game "Minecraft" which allows for injection of new biomes into the biome parameter space by "squishing" existing biomes'
+                    url = 'https://github.com/lukebemishprojects/BiomeSquisher'
+                    inceptionYear = '2023'
+
+                    licenses {
+                        license {
+                            name = '3-Clause BSD License'
+                            url = 'https://opensource.org/license/bsd-3-clause/'
+                        }
+                    }
+                    developers {
+                        developer {
+                            id = 'lukebemish'
+                            name = 'Luke Bemish'
+                            email = 'lukebemish@lukebemish.dev'
+                            url = 'https://github.com/lukebemish/'
+                        }
+                    }
+                    scm {
+                        connection='scm:git:git://github.com/lukebemishprojects/BiomeSquisher.git'
+                        developerConnection='scm:git:ssh://github.com/lukebemishprojects/BiomeSquisher.git'
+                        url='https://github.com/lukebemishprojects/BiomeSquisher'
+                    }
+                }
+            }
+        }
+        repositories {
+            if (System.getenv('PR_NUMBER')) {
+                maven {
+                    name = 'LocalMaven'
+                    url = rootProject.layout.buildDirectory.dir('repo')
+                }
+            } else if (System.getenv('SNAPSHOT_MAVEN_URL')) {
+                maven {
+                    name = 'PersonalMaven'
+                    url = uri(System.getenv('SNAPSHOT_MAVEN_URL'))
+                    credentials {
+                        username = System.getenv('MAVEN_USER')
+                        password = System.getenv('MAVEN_PASSWORD')
+                    }
+                }
+            }
+        }
+    }
+
+    if (System.getenv('GPG_KEY')) {
+        signing {
+            final signingKey = System.getenv('GPG_KEY')
+            final signingPassword = System.getenv('GPG_PASSWORD')
+            useInMemoryPgpKeys(signingKey, signingPassword)
+            sign publishing.publications.mavenRuntime
+        }
+    }
+}
+
+if (System.getenv('SONATYPE_USER')) {
+    nexusPublishing {
+        repositories {
+            sonatype {
+                username.set(System.getenv('SONATYPE_USER') ?: '')
+                password.set(System.getenv('SONATYPE_PASSWORD') ?: '')
+                nexusUrl.set(uri("https://s01.oss.sonatype.org/service/local/"))
+            }
+        }
     }
 }
 

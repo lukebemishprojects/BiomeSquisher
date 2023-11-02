@@ -60,7 +60,7 @@ tasks.named('compileJava', JavaCompile).configure {
     source(project(":common").sourceSets.main.allSource)
 }
 
-import io.github.groovymc.modsdotgroovy.ConvertToFabricJsonTask;
+import io.github.groovymc.modsdotgroovy.ConvertToFabricJsonTask
 var testMdg = tasks.register('testModsDotGroovyToFabricJson', ConvertToFabricJsonTask) {
     input.set new File(project(':common').sourceSets.test.resources.srcDirs.find(), "mods.groovy")
     dependsOn(project(':common').configurations.modsDotGroovy)
@@ -86,15 +86,6 @@ sourcesJar {
 
 javadocJar {
     from project(":common").sourceSets.main.allJava
-}
-
-// configure the maven publication
-publishing {
-    publications {
-        mavenJava(MavenPublication) {
-            from components.java
-        }
-    }
 }
 
 import net.darkhax.curseforgegradle.TaskPublishCurseForge

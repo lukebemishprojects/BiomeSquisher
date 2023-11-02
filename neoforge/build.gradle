@@ -1,6 +1,8 @@
 plugins {
     alias libs.plugins.neogradle.userdev
     alias libs.plugins.neogradle.mixin
+    alias libs.plugins.curseforgegradle
+    alias libs.plugins.minotaur
 }
 
 sourceSets {
@@ -71,7 +73,7 @@ tasks.named('compileJava', JavaCompile).configure {
     source(project(":common").sourceSets.main.allSource)
 }
 
-import io.github.groovymc.modsdotgroovy.ConvertToTomlTask;
+import io.github.groovymc.modsdotgroovy.ConvertToTomlTask
 var testMdg = tasks.register('testModsDotGroovyToToml', ConvertToTomlTask) {
     input.set new File(project(':common').sourceSets.test.resources.srcDirs.find(), "mods.groovy")
     dependsOn(project(':common').configurations.modsDotGroovy)
@@ -102,3 +104,38 @@ javadocJar {
 tasks.named('build').configure {
     dependsOn 'jarJar'
 }
+
+import net.darkhax.curseforgegradle.TaskPublishCurseForge
+
+if (System.getenv('CURSEFORGE_KEY')) {
+    tasks.register('curseforge', TaskPublishCurseForge) {
+        disableVersionDetection()
+        apiToken = System.getenv('CURSEFORGE_KEY')
+        def projectId = '930256'
+        def mainFile = upload(projectId, tasks.jarJar)
+        mainFile.displayName = "${project.modname} [Fabric/Quilt] v$project.version"
+        mainFile.releaseType = "${project.releasetype}"
+        mainFile.addModLoader('NeoForge')
+        mainFile.addGameVersion("${libs.versions.minecraft.get()}")
+        mainFile.changelog = ''
+    }
+
+    afterEvaluate {
+        tasks.curseforge.dependsOn tasks.jarJar
+    }
+}
+
+if (System.getenv('MODRINTH_KEY')) {
+    modrinth {
+        token = System.getenv('MODRINTH_KEY')
+        projectId = 'XiRvJdl1'
+        versionNumber = "$project.version"
+        versionType = "${project.releasetype}"
+        detectLoaders = false
+        uploadFile = tasks.jarJar
+        gameVersions = ["${libs.versions.minecraft.get()}"]
+        loaders = ['neoforge']
+        dependencies {}
+    }
+}
+

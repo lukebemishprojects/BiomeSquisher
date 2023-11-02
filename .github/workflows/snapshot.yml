@@ -1,0 +1,42 @@
+name: Snapshot
+concurrency: ci-${{ github.ref }}
+on:
+    workflow_dispatch:
+    push:
+        branches:
+            - 1.*
+jobs:
+    build:
+        runs-on: ubuntu-22.04
+        steps:
+            - name: Setup Java
+              run: |
+                echo "JAVA_HOME=$JAVA_HOME_17_X64" >> "$GITHUB_ENV"
+            - uses: actions/checkout@v4
+              with:
+                fetch-depth: 0
+            - uses: fregante/setup-git-user@v2
+            - uses: actions/cache@v3
+              with:
+                path: |
+                    .gradle/quilt-loom-cache
+                    .gradle/loom-cache
+                    **/.gradle/caches
+                    **/.gradle/repositories
+                    **/build/neoForm
+                key: ${{ runner.os }}-gradle-${{ hashFiles('**/libs.versions.*', '**/*.gradle*', '**/gradle-wrapper.properties') }}
+                restore-keys: ${{ runner.os }}-gradle-
+            - uses: gradle/gradle-build-action@v2
+              name: Setup Gradle
+            - name: Build
+              run: |
+                  ./gradlew checkLicenses build
+              env:
+                  SNAPSHOT_MAVEN_URL: https://maven.lukebemish.dev/snapshots/
+            - name: Publish
+              run: |
+                  ./gradlew publish
+              env:
+                  MAVEN_USER: github
+                  MAVEN_PASSWORD: ${{ secrets.SNAPSHOT_MAVEN_PASSWORD }}
+                  SNAPSHOT_MAVEN_URL: https://maven.lukebemish.dev/snapshots/

@@ -1,0 +1,5 @@
+{
+  "commands.biomesquisher.dumpbiomes.level_not_multinoise": "Targeted level does not use a multi-noise biome source",
+  "commands.biomesquisher.dumpbiomes.failed_to_save": "Failed to save biome dump - PNGJ may not be present; check the logs for more information",
+  "commands.biomesquisher.dumpbiomes.failed_to_generate": "Failed to generate biome dump - check the logs for more information"
+}

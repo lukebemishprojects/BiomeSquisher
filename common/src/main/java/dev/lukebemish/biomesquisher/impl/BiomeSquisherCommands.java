@@ -26,6 +26,10 @@ public class BiomeSquisherCommands {
         Component.translatable("commands.biomesquisher.dumpbiomes.failed_to_save")
     );
 
+    private static final SimpleCommandExceptionType ERROR_GENERATING_DUMP = new SimpleCommandExceptionType(
+        Component.translatable("commands.biomesquisher.dumpbiomes.failed_to_generate")
+    );
+
     public static void register(CommandDispatcher<CommandSourceStack> dispatcher) {
         dispatcher.register(
             Commands.literal(Utils.MOD_ID)
@@ -93,6 +97,9 @@ public class BiomeSquisherCommands {
         } catch (IOException e) {
             Utils.LOGGER.error("Failed to save biome dump", e);
             throw ERROR_SAVING_DUMP.create();
+        } catch (Exception e) {
+            Utils.LOGGER.error("Failed to generate biome dump", e);
+            throw ERROR_GENERATING_DUMP.create();
         }
 
         return Command.SINGLE_SUCCESS;

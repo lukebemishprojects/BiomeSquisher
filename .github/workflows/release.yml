@@ -1,0 +1,46 @@
+name: Release
+concurrency: ci-${{ github.ref }}
+on:
+    workflow_dispatch:
+jobs:
+    build:
+        runs-on: ubuntu-22.04
+        steps:
+            - name: Setup Java
+              run: |
+                echo "JAVA_HOME=$JAVA_HOME_17_X64" >> "$GITHUB_ENV"
+            - uses: actions/checkout@v4
+              with:
+                fetch-depth: 0
+            - uses: fregante/setup-git-user@v2
+            - uses: actions/cache@v3
+              with:
+                path: |
+                    .gradle/quilt-loom-cache
+                    .gradle/loom-cache
+                    **/.gradle/caches
+                    **/.gradle/repositories
+                    **/build/neoForm
+                key: ${{ runner.os }}-gradle-${{ hashFiles('**/libs.versions.*', '**/*.gradle*', '**/gradle-wrapper.properties') }}
+                restore-keys: ${{ runner.os }}-gradle-
+            - uses: gradle/gradle-build-action@v2
+              name: Setup Gradle
+            - name: Tag Release
+              run: |
+                  ./gradlew tagRelease
+            - name: Build
+              run: |
+                  ./gradlew checkLicenses build
+            - name: Publish
+              run: |
+                  ./gradlew publish curseforge modrinth
+              env:
+                SONATYPE_USER: ${{ secrets.SONATYPE_USER }}
+                SONATYPE_PASSWORD: ${{ secrets.SONATYPE_PASSWORD }}
+                GPG_KEY: ${{ secrets.GPG_KEY }}
+                GPG_PASSWORD: ${{ secrets.GPG_PASSWORD }}
+                CURSEFORGE_KEY: ${{ secrets.CURSEFORGE_KEY }}
+                MODRINTH_KEY: ${{ secrets.MODRINTH_KEY }}
+            - run: |
+                  git push
+                  git push --tags
