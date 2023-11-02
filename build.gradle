@@ -137,7 +137,7 @@ subprojects { p ->
             final signingKey = System.getenv('GPG_KEY')
             final signingPassword = System.getenv('GPG_PASSWORD')
             useInMemoryPgpKeys(signingKey, signingPassword)
-            sign publishing.publications.mavenRuntime
+            sign publishing.publications.mavenJava
         }
     }
 }
