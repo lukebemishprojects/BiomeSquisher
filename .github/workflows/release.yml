@@ -33,7 +33,7 @@ jobs:
                   ./gradlew build
             - name: Publish
               run: |
-                  ./gradlew publish curseforge modrinth
+                  ./gradlew publish curseforge modrinth closeAndReleaseSonatypeStagingRepository
               env:
                 SONATYPE_USER: ${{ secrets.SONATYPE_USER }}
                 SONATYPE_PASSWORD: ${{ secrets.SONATYPE_PASSWORD }}
