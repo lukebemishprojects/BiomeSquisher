@@ -1,6 +1,5 @@
 plugins {
     alias libs.plugins.neogradle.userdev
-    alias libs.plugins.neogradle.mixin
     alias libs.plugins.curseforgegradle
     alias libs.plugins.minotaur
 }
@@ -13,7 +12,6 @@ sourceSets {
 runs {
     configureEach {
         systemProperty 'forge.logging.console.level', 'debug'
-        programArguments.addAll '--mixin.config', 'biomesquisher.test.mixins.json'
         modSources.add project.sourceSets.main
         modSources.add project.sourceSets.test
     }
@@ -27,10 +25,6 @@ runs {
     gameTestServer {
         programArgument '--nogui'
     }
-}
-
-mixin {
-    configs.add 'biomesquisher.mixins.json'
 }
 
 jarJar.enable()
@@ -103,6 +97,10 @@ javadocJar {
 
 tasks.named('build').configure {
     dependsOn 'jarJar'
+}
+
+publishing.publications.mavenJava {
+    artifact tasks.jarJar
 }
 
 import net.darkhax.curseforgegradle.TaskPublishCurseForge

@@ -32,4 +32,9 @@ ModsDotGroovy.make {
             'biomesquisher.test.mixins.json'
         ]
     }
+    onForge {
+        put 'mixins', [
+            ['config':'biomesquisher.test.mixins.json']
+        ]
+    }
 }

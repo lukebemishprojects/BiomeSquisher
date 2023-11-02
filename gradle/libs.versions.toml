@@ -6,8 +6,8 @@ parchment_mappings = "2023.09.03"
 fabric_loader = "0.14.24"
 fabric_api = "0.89.3+1.20.2"
 
-neoforge = "20.2.4-beta"
-neogradle = "7.0.5"
+neoforge = "20.2.23-beta"
+neogradle = "7.0.26"
 
 jetbrains_annotations = "24.0.1"
 autoservice = "1.1.1"
@@ -39,7 +39,6 @@ mixinextras_neoforge = { module = "io.github.llamalad7:mixinextras-neoforge", ve
 [plugins]
 fabric_loom = { id = "fabric-loom", version = "1.4.4" }
 neogradle_userdev = {id = "net.neoforged.gradle.userdev", version.ref = "neogradle" }
-neogradle_mixin = {id = "net.neoforged.gradle.mixin", version.ref = "neogradle" }
 #librarian = {id = "org.parchmentmc.librarian.forgegradle", version = "1.2.0"}
 mdg_plugin = {id = "org.groovymc.modsdotgroovy", version = "1.4.3"}
 curseforgegradle = {id = "net.darkhax.curseforgegradle", version = "1.1.16"}

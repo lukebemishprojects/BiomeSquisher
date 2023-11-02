@@ -1,6 +1,8 @@
 # Biome Squisher
 
 [![Latest Version](https://img.shields.io/modrinth/v/biomesquisher?label=latest&style=for-the-badge)](https://modrinth.com/mod/biomesquisher)
+[![CodeFactor](https://www.codefactor.io/repository/github/lukebemishprojects/biomesquisher/badge?style=for-the-badge)](https://www.codefactor.io/repository/github/lukebemishprojects/biomesquisher)
+[![Central](https://img.shields.io/badge/maven_central-blue?style=for-the-badge)](https://central.sonatype.com/search?q=dev.lukebemish.biomesquisher)
 
 An innovative new approach to adding biomes to the vanilla Minecraft biome map, Biome Squisher is designed with the goal
 of being non-destructive, meaning that vanilla biome placement, boundaries, and relative rarities are preserved.
