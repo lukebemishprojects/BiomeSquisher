@@ -12,9 +12,9 @@ managedVersioning {
         suffixParts.add "${rootProject.releasetype}"
     }
     if (System.getenv('PR_NUMBER')) {
-        suffixParts.add "-pr${System.getenv('PR_NUMBER')}"
+        suffixParts.add "pr${System.getenv('PR_NUMBER')}"
     } else if (System.getenv('SNAPSHOT_MAVEN_URL')) {
-        suffixParts.add '-SNAPSHOT'
+        suffixParts.add 'SNAPSHOT'
     }
 }
 

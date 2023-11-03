@@ -16,11 +16,27 @@ pluginManagement {
 	}
 }
 
+plugins {
+    id 'com.gradle.enterprise' version '3.15'
+}
+
+gradleEnterprise {
+    if (System.getenv('CI') != null) {
+        buildScan {
+            publishAlways()
+            termsOfServiceUrl = "https://gradle.com/terms-of-service"
+            termsOfServiceAgree = "yes"
+        }
+    }
+}
+
 rootProject.name = "biomesquisher"
 
 include 'common', 'fabric', 'neoforge'
 
 buildCache {
+    // Build caching is currently rather useless for neoforge projects, due to the nature of NeoGradle 7
+    /*
     if (providers.gradleProperty('buildCacheUrl').orNull) {
         remote(HttpBuildCache) {
             url = providers.gradleProperty('buildCacheUrl').orNull
@@ -40,4 +56,5 @@ buildCache {
             push = true
         }
     }
+    */
 }
