@@ -19,11 +19,8 @@ jobs:
             - uses: actions/cache@v3
               with:
                 path: |
-                    .gradle/quilt-loom-cache
-                    .gradle/loom-cache
                     **/.gradle/caches
                     **/.gradle/repositories
-                    **/build/neoForm
                 key: ${{ runner.os }}-gradle-${{ hashFiles('**/libs.versions.*', '**/*.gradle*', '**/gradle-wrapper.properties') }}
                 restore-keys: ${{ runner.os }}-gradle-
             - uses: gradle/gradle-build-action@v2
@@ -33,6 +30,9 @@ jobs:
                   ./gradlew build
               env:
                   SNAPSHOT_MAVEN_URL: https://maven.lukebemish.dev/snapshots/
+                  BUILD_CACHE_URL: ${{ secrets.BUILD_CACHE_URL }}
+                  BUILD_CACHE_USER: ${{ secrets.BUILD_CACHE_USER }}
+                  BUILD_CACHE_PASSWORD: ${{ secrets.BUILD_CACHE_PASSWORD }}
             - name: Publish
               run: |
                   ./gradlew publish
@@ -40,3 +40,6 @@ jobs:
                   MAVEN_USER: github
                   MAVEN_PASSWORD: ${{ secrets.SNAPSHOT_MAVEN_PASSWORD }}
                   SNAPSHOT_MAVEN_URL: https://maven.lukebemish.dev/snapshots/
+                  BUILD_CACHE_URL: ${{ secrets.BUILD_CACHE_URL }}
+                  BUILD_CACHE_USER: ${{ secrets.BUILD_CACHE_USER }}
+                  BUILD_CACHE_PASSWORD: ${{ secrets.BUILD_CACHE_PASSWORD }}

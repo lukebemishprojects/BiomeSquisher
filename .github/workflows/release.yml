@@ -16,11 +16,8 @@ jobs:
             - uses: actions/cache@v3
               with:
                 path: |
-                    .gradle/quilt-loom-cache
-                    .gradle/loom-cache
                     **/.gradle/caches
                     **/.gradle/repositories
-                    **/build/neoForm
                 key: ${{ runner.os }}-gradle-${{ hashFiles('**/libs.versions.*', '**/*.gradle*', '**/gradle-wrapper.properties') }}
                 restore-keys: ${{ runner.os }}-gradle-
             - uses: gradle/gradle-build-action@v2
@@ -28,9 +25,17 @@ jobs:
             - name: Tag Release
               run: |
                   ./gradlew tagRelease
+              env:
+                BUILD_CACHE_URL: ${{ secrets.BUILD_CACHE_URL }}
+                BUILD_CACHE_USER: ${{ secrets.BUILD_CACHE_USER }}
+                BUILD_CACHE_PASSWORD: ${{ secrets.BUILD_CACHE_PASSWORD }}
             - name: Build
               run: |
                   ./gradlew build
+              env:
+                BUILD_CACHE_URL: ${{ secrets.BUILD_CACHE_URL }}
+                BUILD_CACHE_USER: ${{ secrets.BUILD_CACHE_USER }}
+                BUILD_CACHE_PASSWORD: ${{ secrets.BUILD_CACHE_PASSWORD }}
             - name: Publish
               run: |
                   ./gradlew publish curseforge modrinth closeAndReleaseSonatypeStagingRepository
@@ -41,6 +46,9 @@ jobs:
                 GPG_PASSWORD: ${{ secrets.GPG_PASSWORD }}
                 CURSEFORGE_KEY: ${{ secrets.CURSEFORGE_KEY }}
                 MODRINTH_KEY: ${{ secrets.MODRINTH_KEY }}
+                BUILD_CACHE_URL: ${{ secrets.BUILD_CACHE_URL }}
+                BUILD_CACHE_USER: ${{ secrets.BUILD_CACHE_USER }}
+                BUILD_CACHE_PASSWORD: ${{ secrets.BUILD_CACHE_PASSWORD }}
             - run: |
                   git push
                   git push --tags

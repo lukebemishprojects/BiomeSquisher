@@ -19,3 +19,25 @@ pluginManagement {
 rootProject.name = "biomesquisher"
 
 include 'common', 'fabric', 'neoforge'
+
+buildCache {
+    if (providers.gradleProperty('buildCacheUrl').orNull) {
+        remote(HttpBuildCache) {
+            url = providers.gradleProperty('buildCacheUrl').orNull
+            credentials {
+                username = providers.gradleProperty('buildCacheUser').orNull
+                password = providers.gradleProperty('buildCachePassword').orNull
+            }
+            push = true
+        }
+    } else if (System.getenv('BUILD_CACHE_URL')) {
+        remote(HttpBuildCache) {
+            url = System.getenv('BUILD_CACHE_URL')
+            credentials {
+                username = System.getenv('BUILD_CACHE_USER')
+                password = System.getenv('BUILD_CACHE_PASSWORD')
+            }
+            push = true
+        }
+    }
+}
