@@ -8,17 +8,13 @@ plugins {
 managedVersioning {
     versionFile.set rootProject.file('version.properties')
     metadataVersion.set libs.versions.minecraft
-    def fullSuffix = ''
     if (rootProject.releasetype != 'release') {
-        fullSuffix += "-${rootProject.releasetype}"
+        suffixParts.add "${rootProject.releasetype}"
     }
     if (System.getenv('PR_NUMBER')) {
-        fullSuffix += "-pr${System.getenv('PR_NUMBER')}"
+        suffixParts.add "-pr${System.getenv('PR_NUMBER')}"
     } else if (System.getenv('SNAPSHOT_MAVEN_URL')) {
-        fullSuffix += '-SNAPSHOT'
-    }
-    if (!fullSuffix.isEmpty()) {
-        suffix.set(fullSuffix.substring(1))
+        suffixParts.add '-SNAPSHOT'
     }
 }
 
