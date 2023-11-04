@@ -111,7 +111,7 @@ if (System.getenv('CURSEFORGE_KEY')) {
         apiToken = System.getenv('CURSEFORGE_KEY')
         def projectId = '930256'
         def mainFile = upload(projectId, tasks.jarJar)
-        mainFile.displayName = "${project.modname} [Fabric/Quilt] v$project.version"
+        mainFile.displayName = "${project.modname} [NeoForge] v$project.version"
         mainFile.releaseType = "${project.releasetype}"
         mainFile.addModLoader('NeoForge')
         mainFile.addGameVersion("${libs.versions.minecraft.get()}")
