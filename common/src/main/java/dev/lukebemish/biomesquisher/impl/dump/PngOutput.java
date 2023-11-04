@@ -37,7 +37,7 @@ public final class PngOutput implements BiomeDumper.Output {
             T line = makeRow.apply(i);
             for (int j = 0; j < 1024; j++) {
                 int finalJ = j;
-                biomeGetter.apply(i/512f - 1, j/512f - 1)
+                biomeGetter.apply(i/1024f, j/1024f)
                     .unwrapKey().ifPresent(key -> {
                         int color = hash.getOrDefault(key, 0);
                         writeValue.accept(line, finalJ, color);

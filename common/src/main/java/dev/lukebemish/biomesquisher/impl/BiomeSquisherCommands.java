@@ -43,37 +43,54 @@ public class BiomeSquisherCommands {
                                     Commands.argument("y", StringArgumentType.word())
                                         .suggests((c, builder) -> SharedSuggestionProvider.suggest(BiomeDumper.EXAMPLES, builder))
                                         .then(
-                                            Commands.argument("i", FloatArgumentType.floatArg(-1, 1))
+                                            Commands.argument("i", FloatArgumentType.floatArg())
                                                 .then(
-                                                    Commands.argument("j", FloatArgumentType.floatArg(-1, 1))
+                                                    Commands.argument("j", FloatArgumentType.floatArg())
                                                         .then(
-                                                            Commands.argument("k", FloatArgumentType.floatArg(-1, 1))
+                                                            Commands.argument("k", FloatArgumentType.floatArg())
                                                                 .then(
-                                                                    Commands.argument("l", FloatArgumentType.floatArg(-1, 1))
-                                                                        .executes(
-                                                                            commandContext -> {
-                                                                                Dimension x;
-                                                                                Dimension y;
-                                                                                try {
-                                                                                    x = Dimension.valueOf(commandContext.getArgument("x", String.class).toUpperCase(Locale.ROOT));
-                                                                                } catch (IllegalArgumentException e) {
-                                                                                    throw CommandSyntaxException.BUILT_IN_EXCEPTIONS.literalIncorrect().create(commandContext.getArgument("x", String.class));
-                                                                                }
-                                                                                try {
-                                                                                    y = Dimension.valueOf(commandContext.getArgument("y", String.class).toUpperCase(Locale.ROOT));
-                                                                                } catch (IllegalArgumentException e) {
-                                                                                    throw CommandSyntaxException.BUILT_IN_EXCEPTIONS.literalIncorrect().create(commandContext.getArgument("y", String.class));
-                                                                                }
-                                                                                float i = commandContext.getArgument("i", Float.class);
-                                                                                float j = commandContext.getArgument("j", Float.class);
-                                                                                float k = commandContext.getArgument("k", Float.class);
-                                                                                float l = commandContext.getArgument("l", Float.class);
-                                                                                BiomeDumper.SliceLocation location = new BiomeDumper.SliceLocation(i, j, k, l);
-                                                                                return exportFor(
-                                                                                    commandContext,
-                                                                                    x, y, location
-                                                                                );
-                                                                            }
+                                                                    Commands.argument("l", FloatArgumentType.floatArg())
+                                                                        .then(
+                                                                            Commands.argument("xMin", FloatArgumentType.floatArg())
+                                                                                .then(
+                                                                                    Commands.argument("xMax", FloatArgumentType.floatArg())
+                                                                                        .then(
+                                                                                            Commands.argument("yMin", FloatArgumentType.floatArg())
+                                                                                                .then(
+                                                                                                    Commands.argument("yMax", FloatArgumentType.floatArg())
+                                                                                                        .executes(
+                                                                                                            commandContext -> {
+                                                                                                                Dimension x;
+                                                                                                                Dimension y;
+                                                                                                                try {
+                                                                                                                    x = Dimension.valueOf(commandContext.getArgument("x", String.class).toUpperCase(Locale.ROOT));
+                                                                                                                } catch (IllegalArgumentException e) {
+                                                                                                                    throw CommandSyntaxException.BUILT_IN_EXCEPTIONS.literalIncorrect().create(commandContext.getArgument("x", String.class));
+                                                                                                                }
+                                                                                                                try {
+                                                                                                                    y = Dimension.valueOf(commandContext.getArgument("y", String.class).toUpperCase(Locale.ROOT));
+                                                                                                                } catch (IllegalArgumentException e) {
+                                                                                                                    throw CommandSyntaxException.BUILT_IN_EXCEPTIONS.literalIncorrect().create(commandContext.getArgument("y", String.class));
+                                                                                                                }
+                                                                                                                float i = commandContext.getArgument("i", Float.class);
+                                                                                                                float j = commandContext.getArgument("j", Float.class);
+                                                                                                                float k = commandContext.getArgument("k", Float.class);
+                                                                                                                float l = commandContext.getArgument("l", Float.class);
+                                                                                                                float xMin = commandContext.getArgument("xMin", Float.class);
+                                                                                                                float xMax = commandContext.getArgument("xMax", Float.class);
+                                                                                                                float yMin = commandContext.getArgument("yMin", Float.class);
+                                                                                                                float yMax = commandContext.getArgument("yMax", Float.class);
+                                                                                                                BiomeDumper.SliceLocation location = new BiomeDumper.SliceLocation(i, j, k, l);
+                                                                                                                BiomeDumper.SliceFrame frame = new BiomeDumper.SliceFrame(xMin, xMax, yMin, yMax);
+                                                                                                                return exportFor(
+                                                                                                                    commandContext,
+                                                                                                                    x, y, location, frame
+                                                                                                                );
+                                                                                                            }
+                                                                                                        )
+                                                                                                )
+                                                                                        )
+                                                                                )
                                                                         )
                                                                 )
                                                         )
@@ -85,7 +102,7 @@ public class BiomeSquisherCommands {
         );
     }
 
-    private static int exportFor(CommandContext<CommandSourceStack> commandContext, Dimension x, Dimension y, BiomeDumper.SliceLocation location) throws CommandSyntaxException {
+    private static int exportFor(CommandContext<CommandSourceStack> commandContext, Dimension x, Dimension y, BiomeDumper.SliceLocation location, BiomeDumper.SliceFrame frame) throws CommandSyntaxException {
         var biomeSource = commandContext.getSource().getLevel().getChunkSource().getGenerator().getBiomeSource();
 
         if (!(biomeSource instanceof MultiNoiseBiomeSource multiNoiseBiomeSource)) {
@@ -93,7 +110,7 @@ public class BiomeSquisherCommands {
         }
 
         try {
-            BiomeDumper.dumpPng(commandContext.getSource().getLevel(), multiNoiseBiomeSource, x, y, location);
+            BiomeDumper.dumpPng(commandContext.getSource().getLevel(), multiNoiseBiomeSource, x, y, location, frame);
         } catch (IOException e) {
             Utils.LOGGER.error("Failed to save biome dump", e);
             throw ERROR_SAVING_DUMP.create();

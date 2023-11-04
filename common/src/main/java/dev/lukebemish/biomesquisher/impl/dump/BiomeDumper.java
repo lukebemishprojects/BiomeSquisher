@@ -2,6 +2,7 @@ package dev.lukebemish.biomesquisher.impl.dump;
 
 import com.mojang.serialization.Codec;
 import com.mojang.serialization.DataResult;
+import com.mojang.serialization.codecs.RecordCodecBuilder;
 import dev.lukebemish.biomesquisher.impl.Dimension;
 import dev.lukebemish.biomesquisher.impl.mixin.MultiNoiseBiomeSourceAccessor;
 import net.minecraft.core.Holder;
@@ -52,7 +53,16 @@ public class BiomeDumper {
         }
     }
 
-    public static void dumpPng(Level level, MultiNoiseBiomeSource source, Dimension x, Dimension y, SliceLocation location) throws IOException {
+    public record SliceFrame(float xMin, float xMax, float yMin, float yMax) {
+        public static final Codec<SliceFrame> CODEC = RecordCodecBuilder.create(i -> i.group(
+            Codec.FLOAT.fieldOf("x_min").forGetter(SliceFrame::xMin),
+            Codec.FLOAT.fieldOf("x_max").forGetter(SliceFrame::xMax),
+            Codec.FLOAT.fieldOf("y_min").forGetter(SliceFrame::yMin),
+            Codec.FLOAT.fieldOf("y_max").forGetter(SliceFrame::yMax)
+        ).apply(i, SliceFrame::new));
+    }
+
+    public static void dumpPng(Level level, MultiNoiseBiomeSource source, Dimension x, Dimension y, SliceLocation location, SliceFrame frame) throws IOException {
         Output output;
         if (IS_PNGJ_PRESENT) {
             output = PngOutput.INSTANCE;
@@ -61,10 +71,10 @@ public class BiomeDumper {
                 throw new IOException("PNGJ is not present; cannot export biome dump as PNG!");
             };
         }
-        dump(level, source, x, y, location, output);
+        dump(level, source, x, y, location, output, frame);
     }
 
-    public static void dump(Level level, MultiNoiseBiomeSource source, Dimension x, Dimension y, SliceLocation location, Output output) throws IOException {
+    public static void dump(Level level, MultiNoiseBiomeSource source, Dimension x, Dimension y, SliceLocation location, Output output, SliceFrame frame) throws IOException {
         Climate.ParameterList<Holder<Biome>> parameters = ((MultiNoiseBiomeSourceAccessor) source).biomesquisher_parameters();
         long[] indices = new long[6];
         int indexed = 0;
@@ -76,8 +86,8 @@ public class BiomeDumper {
             indexed += 1;
         }
         output.dump(level, (xF, yF) -> {
-            indices[x.index()] = Climate.quantizeCoord(xF);
-            indices[y.index()] = Climate.quantizeCoord(yF);
+            indices[x.index()] = Climate.quantizeCoord((xF * (frame.xMax - frame.xMin)) + frame.xMin);
+            indices[y.index()] = Climate.quantizeCoord((yF * (frame.yMax - frame.yMin)) + frame.yMin);
             return parameters.findValue(new Climate.TargetPoint(
                 indices[0], indices[1], indices[2], indices[3], indices[4], indices[5]
             ));

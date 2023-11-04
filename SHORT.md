@@ -50,5 +50,7 @@ Each squisher referenced by a series should be placed at `data/[namespace]/biome
     * `"temperature"`, `"humidity"`, `"erosion"`, `"weirdness"`: one of `"start"`, `"center"`, or `"end"`. When resolving which side of an opened hole to move a biome injection to, Biome Squisher will go through the relatives one by one till
       it finds one with a non-`"center"` dimension that the squisher in the same location squishes in. This means that the list of relatives must give a non-`"center"` value to each dimension *exactly once*.
 
-Biome Squisher applies registered `series` in alphabetical order, so that biome injection is platform-independent and deterministic. Additionally, the mod provides the `/biomesquisher dump` command, which takes the names of two axes and values
-at the remaining four axes, and saves a PNG image slice through the biome space along the specified axes, which may be useful for debugging or generally inspecting the biome space.
+Biome Squisher applies registered `series` in alphabetical order, so that biome injection is platform-independent and
+deterministic. Additionally, the mod provides the `/biomesquisher dump` command, which takes the names of two axes,
+values at the remaining four axes, and bounds to view within the two axes, and saves a PNG image slice through the biome
+space along the specified axes, which may be useful for debugging or generally inspecting the biome space.

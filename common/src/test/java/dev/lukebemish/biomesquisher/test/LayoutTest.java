@@ -9,11 +9,12 @@ import net.minecraft.resources.ResourceLocation;
 import java.util.Arrays;
 
 public record LayoutTest(ResourceLocation location, LayoutSpecs specs, Layout target) {
-    public record LayoutSpecs(Dimension x, Dimension y, BiomeDumper.SliceLocation slice) {
+    public record LayoutSpecs(Dimension x, Dimension y, BiomeDumper.SliceLocation slice, BiomeDumper.SliceFrame frame) {
         public static final Codec<LayoutSpecs> CODEC = RecordCodecBuilder.create(instance -> instance.group(
             Dimension.CODEC.fieldOf("x").forGetter(LayoutSpecs::x),
             Dimension.CODEC.fieldOf("y").forGetter(LayoutSpecs::y),
-            BiomeDumper.SliceLocation.CODEC.fieldOf("slice").forGetter(LayoutSpecs::slice)
+            BiomeDumper.SliceLocation.CODEC.fieldOf("slice").forGetter(LayoutSpecs::slice),
+            BiomeDumper.SliceFrame.CODEC.fieldOf("frame").forGetter(LayoutSpecs::frame)
         ).apply(instance, LayoutSpecs::new));
     }
 

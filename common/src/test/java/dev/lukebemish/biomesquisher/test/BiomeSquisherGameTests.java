@@ -19,14 +19,19 @@ import java.io.IOException;
 
 public class BiomeSquisherGameTests {
 
-    @GameTest(template = "biomesquishertests:empty")
+    @GameTest(
+        batch = "biomesquisher",
+        template = "biomesquishertests:empty"
+    )
     public void testLayouts(GameTestHelper context) {
         var multiNoiseBiomeSource = getOverworldBiomeList(context.getLevel(), context.getLevel().getServer().getResourceManager());
         for (LayoutTest test : TestLayoutReloadListener.LAYOUTS) {
             int[][] data = new int[1024][];
             try {
                 BiomeDumper.dump(context.getLevel(), multiNoiseBiomeSource, test.specs().x(), test.specs().y(), test.specs().slice(), (level, biomeGetter, posibleBiomes) ->
-                    PngOutput.INSTANCE.dumpImage(biomeGetter, posibleBiomes, i -> new int[1024], (i, row) -> data[i] = row, (row, col, v) -> row[col] = v));
+                    PngOutput.INSTANCE.dumpImage(biomeGetter, posibleBiomes, i -> new int[1024], (i, row) -> data[i] = row, (row, col, v) -> row[col] = v),
+                    test.specs().frame()
+                );
             } catch (IOException e) {
                 Utils.LOGGER.error("Failed to save biome dump", e);
                 context.fail("Failed to save biome dump");

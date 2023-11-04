@@ -4,7 +4,11 @@ import com.google.common.collect.BiMap;
 import com.google.common.collect.ImmutableBiMap;
 import com.mojang.serialization.Codec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
+import dev.lukebemish.biomesquisher.impl.Context;
+import dev.lukebemish.biomesquisher.impl.Dimension;
+import dev.lukebemish.biomesquisher.impl.Utils;
 import net.minecraft.util.StringRepresentable;
+import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
 
@@ -34,7 +38,13 @@ public sealed interface DimensionBehaviour {
         return false;
     }
 
-    double center();
+    double globalCenter();
+
+    @ApiStatus.Internal
+    default double center(Context context, Dimension dimension) {
+        return Utils.recontext(globalCenter(), context, dimension);
+    }
+
     Codec<? extends DimensionBehaviour> codec();
 
     enum Type implements StringRepresentable {
@@ -51,8 +61,8 @@ public sealed interface DimensionBehaviour {
 
     final class Range implements DimensionBehaviour {
         public static final Codec<Range> CODEC = RecordCodecBuilder.create(i -> i.group(
-            Codec.DOUBLE.fieldOf("min").forGetter(Range::min),
-            Codec.DOUBLE.fieldOf("max").forGetter(Range::max)
+            Codec.DOUBLE.fieldOf("min").forGetter(Range::globalMin),
+            Codec.DOUBLE.fieldOf("max").forGetter(Range::globalMax)
         ).apply(i, Range::new));
 
         private final double min;
@@ -64,12 +74,22 @@ public sealed interface DimensionBehaviour {
             if (min >= max) throw new IllegalArgumentException("min must be less than max");
         }
 
-        public double min() {
+        public double globalMin() {
             return min;
         }
 
-        public double max() {
+        public double globalMax() {
             return max;
+        }
+
+        @ApiStatus.Internal
+        public double min(Context context, Dimension dimension) {
+            return Utils.recontext(min, context, dimension);
+        }
+
+        @ApiStatus.Internal
+        public double max(Context context, Dimension dimension) {
+            return Utils.recontext(max, context, dimension);
         }
 
         @Override
@@ -83,7 +103,7 @@ public sealed interface DimensionBehaviour {
         }
 
         @Override
-        public double center() {
+        public double globalCenter() {
             return (min + max) / 2f;
         }
 
@@ -103,7 +123,7 @@ public sealed interface DimensionBehaviour {
 
     final class Squish implements DimensionBehaviour {
         public static final Codec<Squish> CODEC = RecordCodecBuilder.create(i -> i.group(
-            Codec.DOUBLE.fieldOf("position").forGetter(Squish::position),
+            Codec.DOUBLE.fieldOf("position").forGetter(Squish::globalPosition),
             Codec.DOUBLE.optionalFieldOf("degree", 1d).forGetter(Squish::degree)
         ).apply(i, Squish::new));
 
@@ -115,8 +135,13 @@ public sealed interface DimensionBehaviour {
             this.degree = degree;
         }
 
-        public double position() {
+        public double globalPosition() {
             return position;
+        }
+
+        @ApiStatus.Internal
+        public double position(Context context, Dimension dimension) {
+            return Utils.recontext(position, context, dimension);
         }
 
         @Override
@@ -130,7 +155,7 @@ public sealed interface DimensionBehaviour {
         }
 
         @Override
-        public double center() {
+        public double globalCenter() {
             return position;
         }
 

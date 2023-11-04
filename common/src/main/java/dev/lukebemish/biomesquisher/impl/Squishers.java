@@ -29,10 +29,10 @@ public class Squishers {
 
     private final List<Pair<Injection, Holder<Biome>>> injections = new ArrayList<>();
 
-    private final Climate.ParameterList<?> parameterList;
+    private final Context context;
 
     public Squishers(Climate.ParameterList<?> parameterList) {
-        this.parameterList = parameterList;
+        this.context = Context.of(parameterList);
     }
 
     public static void load(ResourceKey<LevelStem> level, Squishers squishers, RegistryAccess registryAccess) {
@@ -76,29 +76,29 @@ public class Squishers {
         if (injection.temperature().isSquish()) {
             temperature = dimensionCount;
             dimensionCount++;
-            initial[temperature] = Utils.quantizeCoord(injection.temperature().asSquish().center());
+            initial[temperature] = Utils.decontextQuantizeCoord(injection.temperature().asSquish().globalPosition());
             dimensions[temperature] = Dimension.TEMPERATURE;
         }
         if (injection.humidity().isSquish()) {
             humidity = dimensionCount;
             dimensionCount++;
-            initial[humidity] = Utils.quantizeCoord(injection.humidity().asSquish().center());
+            initial[humidity] = Utils.decontextQuantizeCoord(injection.humidity().asSquish().globalPosition());
             dimensions[humidity] = Dimension.HUMIDITY;
         }
         if (injection.erosion().isSquish()) {
             erosion = dimensionCount;
             dimensionCount++;
-            initial[erosion] = Utils.quantizeCoord(injection.erosion().asSquish().center());
+            initial[erosion] = Utils.decontextQuantizeCoord(injection.erosion().asSquish().globalPosition());
             dimensions[erosion] = Dimension.EROSION;
         }
         if (injection.weirdness().isSquish()) {
             weirdness = dimensionCount;
             dimensionCount++;
-            initial[weirdness] = Utils.quantizeCoord(injection.weirdness().asSquish().center());
+            initial[weirdness] = Utils.decontextQuantizeCoord(injection.weirdness().asSquish().globalPosition());
             dimensions[weirdness] = Dimension.WEIRDNESS;
         }
         outer:
-        for (var pair : parameterList.values()) {
+        for (var pair : context.parameterList().values()) {
             var climatePoint = pair.getFirst();
             for (int i = 0; i < dimensionCount; i++) {
                 if (
@@ -117,7 +117,7 @@ public class Squishers {
                 Long.MAX_VALUE
             };
             for (int i = 0; i < dimensionCount; i++) {
-                findCorners(initial, dimensions, i, dimensionCount, candidates::add, current, Utils.quantizeCoord(injection.radius()), climatePoint);
+                findCorners(initial, dimensions, i, dimensionCount, candidates::add, current, Utils.quantizeCoord(injection.radius(), context, dimensions[i]), climatePoint);
             }
         }
         candidates.sort(CORNER_COMPARATOR);
@@ -128,7 +128,9 @@ public class Squishers {
         DimensionBehaviour[] behaviours = new DimensionBehaviour[dimensionCount];
         for (int i = 0; i < dimensionCount; i++) {
             if (center[i] != Long.MAX_VALUE) {
-                behaviours[i] = new DimensionBehaviour.Squish(Utils.unquantizeAndClamp(center[i]), dimensions[i].fromInjection(injection).asSquish().degree());
+                behaviours[i] = new DimensionBehaviour.Squish(Utils.decontext(
+                    Utils.unquantizeAndClamp(center[i], context, dimensions[i]), context, dimensions[i]
+                ), dimensions[i].fromInjection(injection).asSquish().degree());
             }
         }
         DimensionBehaviour temperatureOut = temperature == -1 ? injection.temperature() : (behaviours[temperature] == null ? injection.temperature() : behaviours[temperature]);
@@ -204,7 +206,7 @@ public class Squishers {
         if (snap) {
             injection = snap(injection);
         }
-        injection = injection.remap(p -> reverse(p, relatives));
+        injection = injection.remap(p -> reverse(p, relatives), context);
         boolean isTemperature = injection.temperature().isSquish();
         boolean isHumidity = injection.humidity().isSquish();
         boolean isErosion = injection.erosion().isSquish();
@@ -228,14 +230,14 @@ public class Squishers {
 
     public double[] reverse(double[] target, Relative.Series relatives) {
         for (int i = injections.size() - 1; i >= 0; i--) {
-            target = injections.get(i).getFirst().unsquish(target, relatives);
+            target = injections.get(i).getFirst().unsquish(target, relatives, context);
         }
         return target;
     }
 
     public Either<Climate.TargetPoint, Holder<Biome>> apply(Climate.TargetPoint target) {
         for (var pair : injections) {
-            target = pair.getFirst().squish(target);
+            target = pair.getFirst().squish(target, context);
             if (target == null) {
                 return Either.right(pair.getSecond());
             }
