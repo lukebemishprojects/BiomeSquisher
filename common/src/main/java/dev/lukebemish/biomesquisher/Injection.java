@@ -11,42 +11,31 @@ import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.Arrays;
-import java.util.function.Function;
 import java.util.function.UnaryOperator;
 
 public final class Injection {
-    private final DimensionBehaviour temperature;
-    private final DimensionBehaviour humidity;
-    private final DimensionBehaviour.Range continentalness;
-    private final DimensionBehaviour erosion;
-    private final DimensionBehaviour.Range depth;
-    private final DimensionBehaviour weirdness;
     private final double radius;
 
     // derived
     private final DimensionBehaviour[] behaviours;
-    private final int squishCount;
-    private final int[] squishIndices;
-    private final int rangeCount;
-    private final int[] rangeIndices;
     private final double degreeScaling;
 
     public static final Codec<Injection> CODEC = RecordCodecBuilder.<Injection>mapCodec(i -> i.group(
-        DimensionBehaviour.CODEC.fieldOf("temperature").forGetter(Injection::temperature),
-        DimensionBehaviour.CODEC.fieldOf("humidity").forGetter(Injection::humidity),
-        DimensionBehaviour.CODEC.comapFlatMap(b -> (b instanceof DimensionBehaviour.Range range) ? DataResult.success(range) : DataResult.error(() -> "Continentalness must be a range"), Function.identity()).fieldOf("continentalness").forGetter(Injection::continentalness),
-        DimensionBehaviour.CODEC.fieldOf("erosion").forGetter(Injection::erosion),
-        DimensionBehaviour.CODEC.comapFlatMap(b -> (b instanceof DimensionBehaviour.Range range) ? DataResult.success(range) : DataResult.error(() -> "Depth must be a range"), Function.identity()).fieldOf("depth").forGetter(Injection::depth),
-        DimensionBehaviour.CODEC.fieldOf("weirdness").forGetter(Injection::weirdness),
+        DimensionBehaviour.CODEC.fieldOf("temperature").forGetter(x -> x.behaviours[Dimension.TEMPERATURE.index()]),
+        DimensionBehaviour.CODEC.fieldOf("humidity").forGetter(x -> x.behaviours[Dimension.HUMIDITY.index()]),
+        DimensionBehaviour.CODEC.fieldOf("continentalness").forGetter(x -> x.behaviours[Dimension.CONTINENTALNESS.index()]),
+        DimensionBehaviour.CODEC.fieldOf("erosion").forGetter(x -> x.behaviours[Dimension.EROSION.index()]),
+        DimensionBehaviour.CODEC.fieldOf("depth").forGetter(x -> x.behaviours[Dimension.DEPTH.index()]),
+        DimensionBehaviour.CODEC.fieldOf("weirdness").forGetter(x -> x.behaviours[Dimension.WEIRDNESS.index()]),
         Codec.DOUBLE.fieldOf("radius").forGetter(Injection::radius)
     ).apply(i, Injection::new)).flatXmap(Injection::verify, DataResult::success).codec();
 
     public static Injection of(
         DimensionBehaviour temperature,
         DimensionBehaviour humidity,
-        DimensionBehaviour.Range continentalness,
+        DimensionBehaviour continentalness,
         DimensionBehaviour erosion,
-        DimensionBehaviour.Range depth,
+        DimensionBehaviour depth,
         DimensionBehaviour weirdness,
         double radius
     ) {
@@ -69,41 +58,12 @@ public final class Injection {
     private Injection(
         DimensionBehaviour temperature,
         DimensionBehaviour humidity,
-        DimensionBehaviour.Range continentalness,
+        DimensionBehaviour continentalness,
         DimensionBehaviour erosion,
-        DimensionBehaviour.Range depth,
+        DimensionBehaviour depth,
         DimensionBehaviour weirdness,
         double radius
     ) {
-        int totalSquish = 0;
-        int totalRange = 2;
-        if (temperature.isSquish()) {
-            totalSquish += 1;
-        } else {
-            totalRange += 1;
-        }
-        if (humidity.isSquish()) {
-            totalSquish += 1;
-        } else {
-            totalRange += 1;
-        }
-        if (erosion.isSquish()) {
-            totalSquish += 1;
-        } else {
-            totalRange += 1;
-        }
-        if (weirdness.isSquish()) {
-            totalSquish += 1;
-        } else {
-            totalRange += 1;
-        }
-
-        this.temperature = temperature;
-        this.humidity = humidity;
-        this.continentalness = continentalness;
-        this.erosion = erosion;
-        this.depth = depth;
-        this.weirdness = weirdness;
         this.radius = radius;
         this.behaviours = new DimensionBehaviour[] {
             temperature,
@@ -113,55 +73,15 @@ public final class Injection {
             depth,
             weirdness
         };
-        squishCount = totalSquish;
-        squishIndices = new int[squishCount];
-        for (int i = 0, j = 0; i < behaviours.length; i++) {
-            if (behaviours[i].isSquish()) {
-                squishIndices[j] = i;
-                j += 1;
-            }
+        double totalDegree = 1;
+        for (int i = 0; i < Dimension.SQUISH_INDEXES.length; i++) {
+            totalDegree *= behaviours[Dimension.SQUISH_INDEXES[i]].asSquish().degree();
         }
-        rangeCount = totalRange;
-        rangeIndices = new int[rangeCount];
-        for (int i = 0, j = 0; i < behaviours.length; i++) {
-            if (behaviours[i].isRange()) {
-                rangeIndices[j] = i;
-                j += 1;
-            }
-        }
-        if (squishCount != 0) {
-            double totalDegree = 1;
-            for (int i = 0; i < squishCount; i++) {
-                totalDegree *= behaviours[squishIndices[i]].asSquish().degree();
-            }
-            this.degreeScaling = Math.pow(totalDegree, 1.0 / squishCount);
-        } else {
-            this.degreeScaling = 1;
-        }
+        this.degreeScaling = Math.pow(totalDegree, 1.0 / Dimension.SQUISH_INDEXES.length);
     }
 
-    public DimensionBehaviour temperature() {
-        return temperature;
-    }
-
-    public DimensionBehaviour humidity() {
-        return humidity;
-    }
-
-    public DimensionBehaviour.Range continentalness() {
-        return continentalness;
-    }
-
-    public DimensionBehaviour erosion() {
-        return erosion;
-    }
-
-    public DimensionBehaviour.Range depth() {
-        return depth;
-    }
-
-    public DimensionBehaviour weirdness() {
-        return weirdness;
+    public DimensionBehaviour[] behaviours() {
+        return behaviours;
     }
 
     public double radius() {
@@ -176,68 +96,13 @@ public final class Injection {
      * @return the coordinate in unsquished space
      */
     @ApiStatus.Internal
-    public double[] unsquish(double[] original, Relative.Series relatives, Context context) {
+    public double[] unsquish(double[] original, Relative relatives, Context context) {
         double[] thePoint = Arrays.copyOf(original, original.length);
-        double[] relativeEdge = new double[squishCount];
+        double[] relativeEdge = new double[Dimension.SQUISH_INDEXES.length];
+        int squishCount = Dimension.SQUISH_INDEXES.length;
 
-        int temperature = -1;
-        int humidity = -1;
-        int erosion = -1;
-        int weirdness = -1;
-        for (int i = 0, j = 0; i < behaviours.length; i++) {
-            if (behaviours[i].isSquish()) {
-                switch (i) {
-                    case 0 -> temperature = j;
-                    case 1 -> humidity = j;
-                    case 3 -> erosion = j;
-                    case 5 -> weirdness = j;
-                }
-                j++;
-            }
-        }
-
-        // First, handle relatives - this basically just solves for the first valid relative in the series and uses that.
-        for (var relative : relatives.relatives()) {
-            boolean toBreak = false;
-            if (temperature != -1) {
-                var position = relative.temperature();
-                if (relativeEdge[temperature] == 0) {
-                    relativeEdge[temperature] = position.offset();
-                }
-                if (position != Relative.Position.CENTER) {
-                    toBreak = true;
-                }
-            }
-            if (humidity != -1) {
-                var position = relative.humidity();
-                if (relativeEdge[humidity] == 0) {
-                    relativeEdge[humidity] = position.offset();
-                }
-                if (position != Relative.Position.CENTER) {
-                    toBreak = true;
-                }
-            }
-            if (erosion != -1) {
-                var position = relative.erosion();
-                if (relativeEdge[erosion] == 0) {
-                    relativeEdge[erosion] = position.offset();
-                }
-                if (position != Relative.Position.CENTER) {
-                    toBreak = true;
-                }
-            }
-            if (weirdness != -1) {
-                var position = relative.weirdness();
-                if (relativeEdge[weirdness] == 0) {
-                    relativeEdge[weirdness] = position.offset();
-                }
-                if (position != Relative.Position.CENTER) {
-                    toBreak = true;
-                }
-            }
-            if (toBreak) {
-                break;
-            }
+        for (int i = 0; i < Dimension.SQUISH_INDEXES.length; i++) {
+            relativeEdge[i] = relatives.positions().getOrDefault(Dimension.SQUISH[i], Relative.Position.CENTER).offset();
         }
 
         // calculate the relative distances of the point to the target point of the hole
@@ -263,7 +128,7 @@ public final class Injection {
             // Re-adjust distance based on the multiplier
             for (int i = 0; i < squishCount; i++) {
                 double diff = result.relativeDiffs[i] / (1 - multiplier);
-                thePoint[squishIndices[i]] = findAbsolutePosition(result.squishCenter[i], diff, i);
+                thePoint[Dimension.SQUISH_INDEXES[i]] = findAbsolutePosition(result.squishCenter[i], diff, i);
             }
 
             return thePoint;
@@ -284,7 +149,7 @@ public final class Injection {
             for (int i = 0; i < squishCount; i++) {
                 // We're inside the "closed" hole and within the range. Use the relative to find target position.
                 double diff = relativeEdge[i] * finalDist;
-                thePoint[squishIndices[i]] = findAbsolutePosition(result.squishCenter()[i], diff, i);
+                thePoint[Dimension.SQUISH_INDEXES[i]] = findAbsolutePosition(result.squishCenter()[i], diff, i);
             }
 
             return thePoint;
@@ -297,7 +162,7 @@ public final class Injection {
         for (int i = 0; i < squishCount; i++) {
             // We're outside the "closed" hold.
             double diff = result.relativeDiffs()[i] * finalRatio;
-            thePoint[squishIndices[i]] = findAbsolutePosition(result.squishCenter[i], diff, i);
+            thePoint[Dimension.SQUISH_INDEXES[i]] = findAbsolutePosition(result.squishCenter[i], diff, i);
         }
 
         return thePoint;
@@ -320,6 +185,9 @@ public final class Injection {
             Utils.unquantizeAndClamp(initial.weirdness(), context, Dimension.WEIRDNESS)
         };
 
+        int squishCount = Dimension.SQUISH_INDEXES.length;
+        int rangeCount = Dimension.RANGE_INDEXES.length;
+
         // calculate the relative distances of the point to the target point of the hole
         RelativeDistanceResult result = relativeDistance(thePoint, context);
 
@@ -327,10 +195,10 @@ public final class Injection {
         if (result.relativeDistance <= radius) {
             boolean isInRange = true;
             for (int i = 0; i < rangeCount; i++) {
-                DimensionBehaviour.Range range = behaviours[rangeIndices[i]].asRange();
-                double min = range.min(context, Dimension.values()[rangeIndices[i]]);
-                double max = range.max(context, Dimension.values()[rangeIndices[i]]);
-                double value = thePoint[rangeIndices[i]];
+                DimensionBehaviour.Range range = behaviours[Dimension.RANGE_INDEXES[i]].asRange();
+                double min = range.min(context, Dimension.values()[Dimension.RANGE_INDEXES[i]]);
+                double max = range.max(context, Dimension.values()[Dimension.RANGE_INDEXES[i]]);
+                double value = thePoint[Dimension.RANGE_INDEXES[i]];
                 if (value < min || value > max) {
                     isInRange = false;
                     break;
@@ -352,7 +220,7 @@ public final class Injection {
             // We're in the hold but not in range - squish towards the center by the proper amount to fill the "closed" hole properly
             for (int i = 0; i < squishCount; i++) {
                 double diff = result.relativeDiffs[i] * (1 - multiplier);
-                thePoint[squishIndices[i]] = findAbsolutePosition(result.squishCenter[i], diff, i);
+                thePoint[Dimension.SQUISH_INDEXES[i]] = findAbsolutePosition(result.squishCenter[i], diff, i);
             }
             return climateOf(thePoint, context);
         }
@@ -373,7 +241,7 @@ public final class Injection {
         for (int i = 0; i < squishCount; i++) {
             // We're outside the "closed" hold.
             double diff = result.relativeDiffs[i] * finalRatio;
-            thePoint[squishIndices[i]] = findAbsolutePosition(result.squishCenter[i], diff, i);
+            thePoint[Dimension.SQUISH_INDEXES[i]] = findAbsolutePosition(result.squishCenter[i], diff, i);
         }
 
         return climateOf(thePoint, context);
@@ -382,33 +250,32 @@ public final class Injection {
     @Override
     public String toString() {
         return "Injection{" +
-            "temperature=" + temperature +
-            ", humidity=" + humidity +
-            ", continentalness=" + continentalness +
-            ", erosion=" + erosion +
-            ", depth=" + depth +
-            ", weirdness=" + weirdness +
-            ", radius=" + radius +
+            "behaviours=" + Arrays.toString(behaviours) +
             '}';
     }
 
     private DataResult<Injection> verify() {
-        if (squishCount < 2) {
-            return DataResult.error(() -> "Must have at least 2 squish dimensions");
+        for (Dimension dimension : Dimension.values()) {
+            if (behaviours[dimension.index()].isRange() && dimension.squish()) {
+                return DataResult.error(() -> "Injection for dimension " + dimension.getSerializedName() + " must not be a range behaviour.");
+            }
+            if (behaviours[dimension.index()].isSquish() && !dimension.squish()) {
+                return DataResult.error(() -> "Injection for dimension " + dimension.getSerializedName() + " must be a range behaviour.");
+            }
         }
         return DataResult.success(this);
     }
 
     /**
      * Finds a relative position, measured in relative distance from the center to the edge, after accounting for shuffling
-     * the dimensions around a bit. The total dimensionality will add up to the {@link #squishCount} still, but it is shuffled
+     * the dimensions around a bit. The total dimensionality will add up to the number of squishing dimensions still, but it is shuffled
      * between dimensions based on the {@link DimensionBehaviour.Squish#degree()} of each dimension.
      */
     private double[] findRelativePosition(double[] centers, double[] point) {
-        double[] relative = new double[squishCount];
-        for (int i = 0; i < squishCount; i++) {
+        double[] relative = new double[Dimension.SQUISH.length];
+        for (int i = 0; i < Dimension.SQUISH.length; i++) {
             double diff = centers[i] - point[i];
-            double power = behaviours[squishIndices[i]].asSquish().degree() / this.degreeScaling;
+            double power = behaviours[Dimension.SQUISH_INDEXES[i]].asSquish().degree() / this.degreeScaling;
             if (diff < 0) {
                 relative[i] = Math.pow(diff / (centers[i] - 1), power);
             } else if (diff > 0) {
@@ -422,7 +289,7 @@ public final class Injection {
      * Reverses {@link #findRelativePosition(double[], double[])} for a single dimension.
      */
     private double findAbsolutePosition(double center, double relative, int i) {
-        double power = behaviours[squishIndices[i]].asSquish().degree() / this.degreeScaling;
+        double power = behaviours[Dimension.SQUISH_INDEXES[i]].asSquish().degree() / this.degreeScaling;
         if (relative < 0) {
             return center - Math.pow(-relative, 1d / power) * (center + 1);
         } else if (relative > 0) {
@@ -439,12 +306,13 @@ public final class Injection {
      * by {@link #findRelativePosition(double[], double[])}.
      */
     private RelativeDistanceResult relativeDistance(double[] thePoint, Context context) {
+        int squishCount = Dimension.SQUISH_INDEXES.length;
         double[] squishPoint = new double[squishCount];
         double[] squishCenter = new double[squishCount];
         for (int i = 0; i < squishCount; i++) {
-            double o = thePoint[squishIndices[i]];
+            double o = thePoint[Dimension.SQUISH_INDEXES[i]];
             squishPoint[i] = o;
-            double c = behaviours[squishIndices[i]].asSquish().position(context, Dimension.values()[squishIndices[i]]);
+            double c = behaviours[Dimension.SQUISH_INDEXES[i]].asSquish().position(context, Dimension.values()[Dimension.SQUISH_INDEXES[i]]);
             squishCenter[i] = c;
         }
         double[] relativeDiffs = findRelativePosition(squishCenter, squishPoint);
@@ -499,11 +367,11 @@ public final class Injection {
     private double calculateMultiplier(double[] thePoint, Context context) {
         double multiplier = 1;
 
-        for (int i = 0; i < rangeCount; i++) {
-            double p = thePoint[rangeIndices[i]];
-            DimensionBehaviour.Range range = behaviours[rangeIndices[i]].asRange();
-            double min = range.min(context, Dimension.values()[rangeIndices[i]]);
-            double max = range.max(context, Dimension.values()[rangeIndices[i]]);
+        for (int i = 0; i < Dimension.RANGE_INDEXES.length; i++) {
+            double p = thePoint[Dimension.RANGE_INDEXES[i]];
+            DimensionBehaviour.Range range = behaviours[Dimension.RANGE_INDEXES[i]].asRange();
+            double min = range.min(context, Dimension.values()[Dimension.RANGE_INDEXES[i]]);
+            double max = range.max(context, Dimension.values()[Dimension.RANGE_INDEXES[i]]);
             if (p < min) {
                 double total = min + 1;
                 double partial = min - p;
@@ -543,17 +411,17 @@ public final class Injection {
     @ApiStatus.Internal
     public Injection scale(double totalVolume) {
         return new Injection(
-            temperature,
-            humidity,
-            continentalness,
-            erosion,
-            depth,
-            weirdness,
-            radius / Math.pow(totalVolume, 1.0 / squishCount));
+            behaviours[0],
+            behaviours[1],
+            behaviours[2],
+            behaviours[3],
+            behaviours[4],
+            behaviours[5],
+            radius / Math.pow(totalVolume, 1.0 / Dimension.SQUISH_INDEXES.length));
     }
 
     /**
-     * Remap the center (and range bounds) of this injection using the given operator - used with {@link #unsquish(double[], Relative.Series, Context)}
+     * Remap the center (and range bounds) of this injection using the given operator - used with {@link #unsquish(double[], Relative, Context)}
      * to layer injections sensibly.
      */
     @ApiStatus.Internal
@@ -566,9 +434,6 @@ public final class Injection {
         double[] remappedCenter = operator.apply(center);
         DimensionBehaviour[] newBehaviours = new DimensionBehaviour[behaviours.length];
         for (int i = 0; i < behaviours.length; i++) {
-            if (i == Dimension.CONTINENTALNESS.index() || i == Dimension.DEPTH.index()) {
-                continue;
-            }
             var behaviour = behaviours[i];
             if (behaviour.isSquish()) {
                 newBehaviours[i] = new DimensionBehaviour.Squish(
@@ -576,25 +441,15 @@ public final class Injection {
                     behaviour.asSquish().degree()
                 );
             } else {
-                double centerValue = center[i];
-                DimensionBehaviour.Range range = behaviour.asRange();
-                center[i] = range.max(context, Dimension.values()[i]);
-                double maxValue = operator.apply(center)[i];
-                center[i] = range.min(context, Dimension.values()[i]);
-                double minValue = operator.apply(center)[i];
-                center[i] = centerValue;
-                newBehaviours[i] = new DimensionBehaviour.Range(
-                    Utils.decontext(minValue, context, Dimension.values()[i]),
-                    Utils.decontext(maxValue, context, Dimension.values()[i])
-                );
+                newBehaviours[i] = behaviour;
             }
         }
         return new Injection(
             newBehaviours[0],
             newBehaviours[1],
-            continentalness,
+            newBehaviours[2],
             newBehaviours[3],
-            depth,
+            newBehaviours[4],
             newBehaviours[5],
             radius
         );

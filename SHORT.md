@@ -38,17 +38,16 @@ Each squisher referenced by a series should be placed at `data/[namespace]/biome
 
 * `"biome"`: the identifier of the biome to inject
 * `"injection"`: defines where and how the biome will be injected. Has the following structure:
-    * `"radius"`: how large the injection should be, with `0` being "nothing" and `1` being "the entire biome space"
-    * `"temperature"`, `"humidify"`, `"continentalness"`, `"erosion"`, `"depth"`, and `"humidity"`: define the injection's behaviour on different axes. Each has a `"type"` field and takes one of the following forms:
-        * `"type": "range"`: defines a set range to inject the biome in; in other words, the biome does not squish on this axis. `"continentalness"` and `"depth"` must define a range.
-            * `"min"` and `"max"`: define the endpoints of the range
-        * `"type": "squish"`: the biome should squish other biomes out of the way in this dimension. At least two dimensions must have squishing behaviour.
-            * `"position"`: the posiiton in this axis to inject the biome at, and squish other biomes away from
-            * `"degree"`: (optional, defaults to `1`) allows for non-square injections. Make this value larger or smaller than 1 to make the "hole" opened up by the squishing larger or smaller on this axis, shrinking accordingly on other axes
+  * `"radius"`: how large the injection should be, with `0` being "nothing" and `1` being "the entire biome space"
+  * `"temperature"`, `"humidify"`, `"continentalness"`, `"erosion"`, `"depth"`, and `"humidity"`: define the injection's behaviour on different axes. Each has a `"type"` field and takes one of the following forms:
+    * `"type": "range"`: defines a set range to inject the biome in; in other words, the biome does not squish on this axis. `"continentalness"` and `"depth"` must define a range.
+      * `"min"` and `"max"`: define the endpoints of the range
+    * `"type": "squish"`: the biome should squish other biomes out of the way in this dimension. At least two dimensions must have squishing behaviour
+      * `"position"`: the posiiton in this axis to inject the biome at, and squish other biomes away from
+      * `"degree"`: (optional, defaults to `1`) allows for non-square injections. Make this value larger or smaller than 1 to make the "hole" opened up by the squishing larger or smaller on this axis, shrinking accordingly on other axes
 * `"snap"`: (optional; defaults to `true`) whether the biome injection should "snap" to a corner/edge between biomes within its radius, if one is present
-* `"relative"`: (optional; defaults to the top of each dimension, in order) when two biomes attempt to inject at the same location, their relative values are queried. Takes a list of objects:
-    * `"temperature"`, `"humidity"`, `"erosion"`, `"weirdness"`: one of `"start"`, `"center"`, or `"end"`. When resolving which side of an opened hole to move a biome injection to, Biome Squisher will go through the relatives one by one till
-      it finds one with a non-`"center"` dimension that the squisher in the same location squishes in. This means that the list of relatives must give a non-`"center"` value to each dimension *exactly once*.
+* `"relative"`: (optional; defaults to the start of temperature) when two biomes attempt to inject at the same location, their relative values are queried. Has the following structure:
+  * `"temperature"`, `"humidity"`: one of `"start"`, `"center"`, or `"end"`. When resolving which side of an opened hole to move a biome injection to, Biome Squisher will use this; at least one value must be non-`"center"`
 
 Biome Squisher applies registered `series` in alphabetical order, so that biome injection is platform-independent and
 deterministic. Additionally, the mod provides the `/biomesquisher dump` command, which takes the names of two axes,

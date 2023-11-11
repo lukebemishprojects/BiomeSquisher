@@ -16,8 +16,9 @@
       "max": 1.0
     },
     "erosion": {
-      "type": "squish",
-      "position": -0.3
+      "type": "range",
+      "min": -0.5,
+      "max": 0.5
     },
     "depth": {
       "type": "range",
@@ -25,8 +26,9 @@
       "max": 0.0
     },
     "weirdness": {
-      "type": "squish",
-      "position": 0.2
+      "type": "range",
+      "min": 0.0,
+      "max": 0.5
     },
     "radius": 0.15
   },

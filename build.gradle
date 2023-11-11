@@ -69,9 +69,12 @@ subprojects { p ->
 
     dependencies {
         compileOnly libs.jetbrains.annotations
+        testCompileOnly libs.jetbrains.annotations
         implementation libs.pngj
         compileOnly libs.autoservice
         annotationProcessor libs.autoservice
+        testCompileOnly libs.autoservice
+        testAnnotationProcessor libs.autoservice
     }
 
     publishing {

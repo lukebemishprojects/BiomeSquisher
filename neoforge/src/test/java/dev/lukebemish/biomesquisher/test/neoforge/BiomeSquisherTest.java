@@ -2,6 +2,7 @@ package dev.lukebemish.biomesquisher.test.neoforge;
 
 import dev.lukebemish.biomesquisher.impl.Utils;
 import dev.lukebemish.biomesquisher.test.BiomeSquisherGameTests;
+import dev.lukebemish.biomesquisher.test.TestUtils;
 import net.minecraft.gametest.framework.*;
 import net.minecraft.world.level.block.Rotation;
 import net.neoforged.fml.common.Mod;
@@ -17,7 +18,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.function.Consumer;
 
-@Mod(Utils.MOD_ID+"tests")
+@Mod(TestUtils.MOD_ID)
 public class BiomeSquisherTest {
     public BiomeSquisherTest() {
         var modBus = FMLJavaModLoadingContext.get().getModEventBus();
@@ -62,6 +63,15 @@ public class BiomeSquisherTest {
                         gameTest.attempts(),
                         makeConsumer(method)
                     ));
+                } else if (method.isAnnotationPresent(GameTestGenerator.class)) {
+                    try {
+                        var uncheckedTest = (Collection<?>) method.invoke(null);
+                        for (var test : uncheckedTest) {
+                            tests.add((TestFunction) test);
+                        }
+                    } catch (ReflectiveOperationException e) {
+                        throw new RuntimeException(e);
+                    }
                 }
             }
         }

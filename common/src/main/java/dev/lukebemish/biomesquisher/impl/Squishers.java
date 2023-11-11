@@ -22,10 +22,8 @@ import java.util.function.Consumer;
 import java.util.stream.Stream;
 
 public class Squishers {
-    private double relativeSizeTemperature = 1;
-    private double relativeSizeHumidity = 1;
-    private double relativeSizeErosion = 1;
-    private double relativeSizeWeirdness = 1;
+
+    private final double[] relativeSizes = new double[] { 1, 1, 1, 1, 1, 1 };
 
     private final List<Pair<Injection, Holder<Biome>>> injections = new ArrayList<>();
 
@@ -67,35 +65,18 @@ public class Squishers {
     private Injection snap(Injection injection) {
         List<Pair<long[], Double>> candidates = new ArrayList<>();
         int dimensionCount = 0;
-        int temperature = -1;
-        int humidity = -1;
-        int erosion = -1;
-        int weirdness = -1;
-        long[] initial = new long[4];
-        Dimension[] dimensions = new Dimension[4];
-        if (injection.temperature().isSquish()) {
-            temperature = dimensionCount;
-            dimensionCount++;
-            initial[temperature] = Utils.decontextQuantizeCoord(injection.temperature().asSquish().globalPosition());
-            dimensions[temperature] = Dimension.TEMPERATURE;
-        }
-        if (injection.humidity().isSquish()) {
-            humidity = dimensionCount;
-            dimensionCount++;
-            initial[humidity] = Utils.decontextQuantizeCoord(injection.humidity().asSquish().globalPosition());
-            dimensions[humidity] = Dimension.HUMIDITY;
-        }
-        if (injection.erosion().isSquish()) {
-            erosion = dimensionCount;
-            dimensionCount++;
-            initial[erosion] = Utils.decontextQuantizeCoord(injection.erosion().asSquish().globalPosition());
-            dimensions[erosion] = Dimension.EROSION;
-        }
-        if (injection.weirdness().isSquish()) {
-            weirdness = dimensionCount;
-            dimensionCount++;
-            initial[weirdness] = Utils.decontextQuantizeCoord(injection.weirdness().asSquish().globalPosition());
-            dimensions[weirdness] = Dimension.WEIRDNESS;
+        int[] dimensionIdxs = new int[Dimension.values().length];
+        long[] initial = new long[Dimension.values().length];
+        Dimension[] dimensions = new Dimension[Dimension.values().length];
+        for (int i = 0; i < dimensions.length; i++) {
+            if (injection.behaviours()[i].isSquish()) {
+                dimensionIdxs[i] = dimensionCount;
+                initial[dimensionCount] = Utils.decontextQuantizeCoord(injection.behaviours()[i].asSquish().globalPosition());
+                dimensions[dimensionCount] = Dimension.values()[i];
+                dimensionCount++;
+            } else {
+                dimensionIdxs[i] = -1;
+            }
         }
         outer:
         for (var pair : context.parameterList().values()) {
@@ -133,18 +114,26 @@ public class Squishers {
                 ), dimensions[i].fromInjection(injection).asSquish().degree());
             }
         }
-        DimensionBehaviour temperatureOut = temperature == -1 ? injection.temperature() : (behaviours[temperature] == null ? injection.temperature() : behaviours[temperature]);
-        DimensionBehaviour humidityOut = humidity == -1 ? injection.humidity() : (behaviours[humidity] == null ? injection.humidity() : behaviours[humidity]);
-        DimensionBehaviour erosionOut = erosion == -1 ? injection.erosion() : (behaviours[erosion] == null ? injection.erosion() : behaviours[erosion]);
-        DimensionBehaviour weirdnessOut = weirdness == -1 ? injection.weirdness() : (behaviours[weirdness] == null ? injection.weirdness() : behaviours[weirdness]);
+        DimensionBehaviour[] out = new DimensionBehaviour[Dimension.values().length];
+
+        for (int i = 0; i < out.length; i++) {
+            if (dimensionIdxs[i] != -1) {
+                var behaviour = behaviours[dimensionIdxs[i]];
+                if (behaviour != null) {
+                    out[i] = behaviour;
+                    continue;
+                }
+            }
+            out[i] = injection.behaviours()[i];
+        }
 
         return Injection.of(
-            temperatureOut,
-            humidityOut,
-            injection.continentalness(),
-            erosionOut,
-            injection.depth(),
-            weirdnessOut,
+            out[0],
+            out[1],
+            out[2],
+            out[3],
+            out[4],
+            out[5],
             injection.radius()
         );
     }
@@ -202,33 +191,23 @@ public class Squishers {
         return Math.sqrt(distance);
     }
 
-    private void add(Injection injection, Holder<Biome> biomeHolder, Relative.Series relatives, boolean snap) {
+    private void add(Injection injection, Holder<Biome> biomeHolder, Relative relatives, boolean snap) {
         if (snap) {
             injection = snap(injection);
         }
         injection = injection.remap(p -> reverse(p, relatives), context);
-        boolean isTemperature = injection.temperature().isSquish();
-        boolean isHumidity = injection.humidity().isSquish();
-        boolean isErosion = injection.erosion().isSquish();
-        boolean isWeirdness = injection.weirdness().isSquish();
-        int dimensions = (isTemperature ? 1 : 0) + (isHumidity ? 1 : 0) + (isErosion ? 1 : 0) + (isWeirdness ? 1 : 0);
-        if (isTemperature) {
-            relativeSizeTemperature = Math.pow(Math.pow(relativeSizeTemperature, dimensions) + Math.pow(injection.radius(), dimensions), 1.0 / dimensions);
+        int squishCount = Dimension.SQUISH_INDEXES.length;
+        for (int i : Dimension.SQUISH_INDEXES) {
+            relativeSizes[i] = Math.pow(Math.pow(relativeSizes[i], squishCount) + Math.pow(injection.radius(), squishCount), 1.0 / squishCount);
         }
-        if (isHumidity) {
-            relativeSizeHumidity = Math.pow(Math.pow(relativeSizeHumidity, dimensions) + Math.pow(injection.radius(), dimensions), 1.0 / dimensions);
+        double relativeVolume = 1;
+        for (double relativeSize : relativeSizes) {
+            relativeVolume *= relativeSize;
         }
-        if (isErosion) {
-            relativeSizeErosion = Math.pow(Math.pow(relativeSizeErosion, dimensions) + Math.pow(injection.radius(), dimensions), 1.0 / dimensions);
-        }
-        if (isWeirdness) {
-            relativeSizeWeirdness = Math.pow(Math.pow(relativeSizeWeirdness, dimensions) + Math.pow(injection.radius(), dimensions), 1.0 / dimensions);
-        }
-        double relativeVolume = (isTemperature ? relativeSizeTemperature : 1) * (isHumidity ? relativeSizeHumidity : 1) * (isErosion ? relativeSizeErosion : 1) * (isWeirdness ? relativeSizeWeirdness : 1);
         injections.add(0, Pair.of(injection.scale(relativeVolume), biomeHolder));
     }
 
-    public double[] reverse(double[] target, Relative.Series relatives) {
+    public double[] reverse(double[] target, Relative relatives) {
         for (int i = injections.size() - 1; i >= 0; i--) {
             target = injections.get(i).getFirst().unsquish(target, relatives, context);
         }
@@ -250,7 +229,12 @@ public class Squishers {
     }
 
     public boolean needsSpacialScaling() {
-        return relativeSizeTemperature != 1 || relativeSizeHumidity != 1 || relativeSizeErosion != 1 || relativeSizeWeirdness != 1;
+        for (double relativeSize : relativeSizes) {
+            if (relativeSize != 1) {
+                return true;
+            }
+        }
+        return false;
     }
 
     @Override
@@ -261,21 +245,25 @@ public class Squishers {
     }
 
     public NoiseRouter wrap(NoiseRouter router) {
-        var temperature = relativeSizeTemperature == 1 ? router.temperature() : wrapHolderHolder(scaledOrElse(unwrapHolderHolder(router.temperature()), Math.sqrt(relativeSizeTemperature)));
-        var humidity = relativeSizeHumidity == 1 ? router.vegetation() : wrapHolderHolder(scaledOrElse(unwrapHolderHolder(router.vegetation()), Math.sqrt(relativeSizeHumidity)));
-        var erosion = relativeSizeErosion == 1 ? router.erosion() : wrapHolderHolder(scaledOrElse(unwrapHolderHolder(router.erosion()), Math.sqrt(relativeSizeErosion)));
-        var weirdness = relativeSizeWeirdness == 1 ? router.ridges() : wrapHolderHolder(scaledOrElse(unwrapHolderHolder(router.ridges()), Math.sqrt(relativeSizeWeirdness)));
+        DensityFunction[] functions = new DensityFunction[6];
+        for (int i = 0; i < 6; i++) {
+            if (relativeSizes[i] != 1) {
+                functions[i] = wrapHolderHolder(scaledOrElse(unwrapHolderHolder(Dimension.values()[i].fromNoiseRouter(router)), Math.sqrt(relativeSizes[i])));
+            } else {
+                functions[i] = Dimension.values()[i].fromNoiseRouter(router);
+            }
+        }
         return new NoiseRouter(
             router.barrierNoise(),
             router.fluidLevelFloodednessNoise(),
             router.fluidLevelSpreadNoise(),
             router.lavaNoise(),
-            temperature,
-            humidity,
-            router.continents(),
-            erosion,
-            router.depth(),
-            weirdness,
+            functions[0],
+            functions[1],
+            functions[2],
+            functions[3],
+            functions[4],
+            functions[5],
             router.initialDensityWithoutJaggedness(),
             router.finalDensity(),
             router.veinToggle(),
