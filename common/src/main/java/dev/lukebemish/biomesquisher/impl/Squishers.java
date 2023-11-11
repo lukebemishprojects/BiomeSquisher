@@ -23,9 +23,11 @@ import java.util.stream.Stream;
 
 public class Squishers {
 
+    private record InjectionData(Injection injection, Holder<Biome> biome, Relative relative) {}
+
     private final double[] relativeSizes = new double[] { 1, 1, 1, 1, 1, 1 };
 
-    private final List<Pair<Injection, Holder<Biome>>> injections = new ArrayList<>();
+    private final List<InjectionData> injections = new ArrayList<>();
 
     private final Context context;
 
@@ -191,11 +193,10 @@ public class Squishers {
         return Math.sqrt(distance);
     }
 
-    private void add(Injection injection, Holder<Biome> biomeHolder, Relative relatives, boolean snap) {
+    private void add(Injection injection, Holder<Biome> biomeHolder, Relative relative, boolean snap) {
         if (snap) {
             injection = snap(injection);
         }
-        injection = injection.remap(p -> reverse(p, relatives), context);
         int squishCount = Dimension.SQUISH_INDEXES.length;
         for (int i : Dimension.SQUISH_INDEXES) {
             relativeSizes[i] = Math.pow(Math.pow(relativeSizes[i], squishCount) + Math.pow(injection.radius(), squishCount), 1.0 / squishCount);
@@ -204,28 +205,33 @@ public class Squishers {
         for (double relativeSize : relativeSizes) {
             relativeVolume *= relativeSize;
         }
-        injections.add(0, Pair.of(injection.scale(relativeVolume), biomeHolder));
+        injections.add(0, new InjectionData(injection.scale(relativeVolume), biomeHolder, relative));
     }
 
-    public double[] reverse(double[] target, Relative relatives) {
-        for (int i = injections.size() - 1; i >= 0; i--) {
-            target = injections.get(i).getFirst().unsquish(target, relatives, context);
+    public double[] reverse(int end, double[] target, Relative relatives) {
+        for (int i = injections.size() - 1; i > end; i--) {
+            var data = injections.get(i);
+            int finalI = i;
+            target = data.injection().unsquish(p -> reverse(finalI, p, data.relative()), target, relatives, context);
         }
         return target;
     }
 
     public Either<Climate.TargetPoint, Holder<Biome>> apply(Climate.TargetPoint target) {
-        for (var pair : injections) {
-            target = pair.getFirst().squish(target, context);
+        int i = 0;
+        for (var data : injections) {
+            int finalI = i;
+            target = data.injection().squish(p -> reverse(finalI, p, data.relative()), target, context);
             if (target == null) {
-                return Either.right(pair.getSecond());
+                return Either.right(data.biome());
             }
+            i++;
         }
         return Either.left(target);
     }
 
     public Stream<Holder<Biome>> possibleBiomes() {
-        return injections.stream().map(Pair::getSecond);
+        return injections.stream().map(InjectionData::biome);
     }
 
     public boolean needsSpacialScaling() {

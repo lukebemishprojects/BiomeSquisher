@@ -17,8 +17,8 @@
     },
     "erosion": {
       "type": "range",
-      "min": -0.5,
-      "max": 0.5
+      "min": -0.3,
+      "max": 0.7
     },
     "depth": {
       "type": "range",

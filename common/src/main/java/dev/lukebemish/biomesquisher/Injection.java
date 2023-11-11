@@ -11,7 +11,7 @@ import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.Arrays;
-import java.util.function.UnaryOperator;
+import java.util.function.Function;
 
 public final class Injection {
     private final double radius;
@@ -96,7 +96,7 @@ public final class Injection {
      * @return the coordinate in unsquished space
      */
     @ApiStatus.Internal
-    public double[] unsquish(double[] original, Relative relatives, Context context) {
+    public double[] unsquish(Function<double[], double[]> centerRemainder, double[] original, Relative relatives, Context context) {
         double[] thePoint = Arrays.copyOf(original, original.length);
         double[] relativeEdge = new double[Dimension.SQUISH_INDEXES.length];
         int squishCount = Dimension.SQUISH_INDEXES.length;
@@ -106,7 +106,7 @@ public final class Injection {
         }
 
         // calculate the relative distances of the point to the target point of the hole
-        RelativeDistanceResult result = relativeDistance(thePoint, context);
+        RelativeDistanceResult result = relativeDistance(centerRemainder, thePoint, context);
 
         // a multiplier based on distance from the desired range in non-squished dimensions
         double multiplier = calculateMultiplier(thePoint, context);
@@ -175,7 +175,7 @@ public final class Injection {
      * @return the coordinate in squished space, or null if the input coordinate is in the hole
      */
     @ApiStatus.Internal
-    public @Nullable Climate.TargetPoint squish(Climate.TargetPoint initial, Context context) {
+    public @Nullable Climate.TargetPoint squish(Function<double[], double[]> centerRemainder, Climate.TargetPoint initial, Context context) {
         double[] thePoint = new double[] {
             Utils.unquantizeAndClamp(initial.temperature(), context, Dimension.TEMPERATURE),
             Utils.unquantizeAndClamp(initial.humidity(), context, Dimension.HUMIDITY),
@@ -189,7 +189,7 @@ public final class Injection {
         int rangeCount = Dimension.RANGE_INDEXES.length;
 
         // calculate the relative distances of the point to the target point of the hole
-        RelativeDistanceResult result = relativeDistance(thePoint, context);
+        RelativeDistanceResult result = relativeDistance(centerRemainder, thePoint, context);
 
         // We're inside the radius of the hole
         if (result.relativeDistance <= radius) {
@@ -305,14 +305,25 @@ public final class Injection {
      * distance from the center of the hole to the edge going through the point, all within the "relative space" created
      * by {@link #findRelativePosition(double[], double[])}.
      */
-    private RelativeDistanceResult relativeDistance(double[] thePoint, Context context) {
+    private RelativeDistanceResult relativeDistance(Function<double[], double[]> centerRemainder, double[] thePoint, Context context) {
+        double[] fullCenter = new double[behaviours.length];
+        for (int i = 0; i < behaviours.length; i++) {
+            var behaviour = behaviours[i];
+            if (behaviour.isSquish()) {
+                fullCenter[i] = behaviour.asSquish().center(context, Dimension.values()[i]);
+            } else {
+                fullCenter[i] = thePoint[i];
+            }
+        }
+        fullCenter = centerRemainder.apply(fullCenter);
+
         int squishCount = Dimension.SQUISH_INDEXES.length;
         double[] squishPoint = new double[squishCount];
         double[] squishCenter = new double[squishCount];
         for (int i = 0; i < squishCount; i++) {
             double o = thePoint[Dimension.SQUISH_INDEXES[i]];
             squishPoint[i] = o;
-            double c = behaviours[Dimension.SQUISH_INDEXES[i]].asSquish().position(context, Dimension.values()[Dimension.SQUISH_INDEXES[i]]);
+            double c = fullCenter[Dimension.SQUISH_INDEXES[i]];
             squishCenter[i] = c;
         }
         double[] relativeDiffs = findRelativePosition(squishCenter, squishPoint);
@@ -418,40 +429,5 @@ public final class Injection {
             behaviours[4],
             behaviours[5],
             radius / Math.pow(totalVolume, 1.0 / Dimension.SQUISH_INDEXES.length));
-    }
-
-    /**
-     * Remap the center (and range bounds) of this injection using the given operator - used with {@link #unsquish(double[], Relative, Context)}
-     * to layer injections sensibly.
-     */
-    @ApiStatus.Internal
-    public Injection remap(UnaryOperator<double[]> operator, Context context) {
-        double[] center = new double[behaviours.length];
-        for (int i = 0; i < behaviours.length; i++) {
-            var behaviour = behaviours[i];
-            center[i] = behaviour.center(context, Dimension.values()[i]);
-        }
-        double[] remappedCenter = operator.apply(center);
-        DimensionBehaviour[] newBehaviours = new DimensionBehaviour[behaviours.length];
-        for (int i = 0; i < behaviours.length; i++) {
-            var behaviour = behaviours[i];
-            if (behaviour.isSquish()) {
-                newBehaviours[i] = new DimensionBehaviour.Squish(
-                    Utils.decontext(remappedCenter[i], context, Dimension.values()[i]),
-                    behaviour.asSquish().degree()
-                );
-            } else {
-                newBehaviours[i] = behaviour;
-            }
-        }
-        return new Injection(
-            newBehaviours[0],
-            newBehaviours[1],
-            newBehaviours[2],
-            newBehaviours[3],
-            newBehaviours[4],
-            newBehaviours[5],
-            radius
-        );
     }
 }
