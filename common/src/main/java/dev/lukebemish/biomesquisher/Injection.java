@@ -381,16 +381,19 @@ public final class Injection {
         for (int i = 0; i < Dimension.RANGE_INDEXES.length; i++) {
             double p = thePoint[Dimension.RANGE_INDEXES[i]];
             DimensionBehaviour.Range range = behaviours[Dimension.RANGE_INDEXES[i]].asRange();
-            double min = range.min(context, Dimension.values()[Dimension.RANGE_INDEXES[i]]);
-            double max = range.max(context, Dimension.values()[Dimension.RANGE_INDEXES[i]]);
+            double min = range.min(context, Dimension.RANGE[i]);
+            double max = range.max(context, Dimension.RANGE[i]);
             if (p < min) {
-                double total = min + 1;
                 double partial = min - p;
-                multiplier *= Math.max(0, 1 - (partial) / Math.min(total, radius));
+                multiplier *= Math.max(0, 1 - (partial) / radius);
             } else if (p > max) {
-                double total = 1 - max;
-                double partial = p - min;
-                multiplier *= Math.max(0, 1 - (partial) / Math.min(total, radius));
+                double partial = p - max;
+                multiplier *= Math.max(0, 1 - (partial) / radius);
+                // alternative calculation:
+                // double total = 1 - max;
+                // double partial = p - min;
+                // multiplier *= Math.max(0, 1 - (partial) / Math.min(radius, total));
+                // picks the shorter of radius or total distance. Has weird effects with ranges near edges. It is no longer needed with fixed range-ness of dimensions
             }
         }
         return multiplier;

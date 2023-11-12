@@ -254,22 +254,22 @@
             <fieldset>
                 <legend>X Bounds</legend>
                 <div>
-                    <input type="text" id="xMin" value="-1">
+                    <input type="text" id="xMin" value="-1" oninput="setXMin(this.value)">
                     <label for="xMin">Minimum</label>
                 </div>
                 <div>
-                    <input type="text" id="xMax" value="1">
+                    <input type="text" id="xMax" value="1" oninput="setXMax(this.value)">
                     <label for="xMax">Maximum</label>
                 </div>
             </fieldset>
             <fieldset>
                 <legend>Y Bounds</legend>
                 <div>
-                    <input type="text" id="yMin" value="-1">
+                    <input type="text" id="yMin" value="-1" oninput="setYMin(this.value)">
                     <label for="yMin">Minimum</label>
                 </div>
                 <div>
-                    <input type="text" id="yMax" value="1">
+                    <input type="text" id="yMax" value="1" oninput="setYMax(this.value)">
                     <label for="yMax">Maxumim</label>
                 </div>
             </fieldset>

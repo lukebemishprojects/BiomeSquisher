@@ -13,7 +13,9 @@ import dev.lukebemish.biomesquisher.impl.server.WebServerThread;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.commands.Commands;
 import net.minecraft.commands.SharedSuggestionProvider;
+import net.minecraft.network.chat.ClickEvent;
 import net.minecraft.network.chat.Component;
+import net.minecraft.network.chat.Style;
 import net.minecraft.world.level.biome.MultiNoiseBiomeSource;
 
 import java.io.IOException;
@@ -125,7 +127,11 @@ public class BiomeSquisherCommands {
                                             commandContext -> {
                                                 int port = commandContext.getArgument("port", Integer.class);
                                                 setupServer(commandContext, port);
-                                                commandContext.getSource().sendSuccess(() -> Component.translatable("commands.biomesquisher.serve.on_port", port), true);
+                                                commandContext.getSource().sendSuccess(() -> Component.translatable("commands.biomesquisher.serve.on_port",
+                                                    Component.literal("http://localhost:"+port+"/").withStyle(
+                                                        Style.EMPTY.withClickEvent(new ClickEvent(ClickEvent.Action.OPEN_URL, "http://localhost:"+port+"/")).withUnderlined(true)
+                                                    )
+                                                ), true);
                                                 return Command.SINGLE_SUCCESS;
                                             }
                                         )

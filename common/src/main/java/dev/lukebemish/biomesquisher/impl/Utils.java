@@ -25,9 +25,6 @@ public final class Utils {
     }
 
     public static double unquantizeAndClamp(long coord, Context context, Dimension dimension) {
-        if (!dimension.squish()) {
-            return coord / context.quantization().get(dimension);
-        }
         return Mth.clamp(coord / context.quantization().get(dimension), -1, 1);
     }
 
