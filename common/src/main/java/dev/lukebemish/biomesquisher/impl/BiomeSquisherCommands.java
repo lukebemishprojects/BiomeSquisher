@@ -38,6 +38,10 @@ public class BiomeSquisherCommands {
         Component.translatable("commands.biomesquisher.serve.failed_to_start")
     );
 
+    private static final SimpleCommandExceptionType ERROR_ON_DEDICATED_SERVER = new SimpleCommandExceptionType(
+        Component.translatable("commands.biomesquisher.on_dedicated_server")
+    );
+
     public static void register(CommandDispatcher<CommandSourceStack> dispatcher) {
         dispatcher.register(
             Commands.literal(Utils.MOD_ID)
@@ -114,8 +118,12 @@ public class BiomeSquisherCommands {
                             Commands.literal("stop")
                                 .executes(
                                     commandContext -> {
-                                        WebServerThread.stopServer();
-                                        return Command.SINGLE_SUCCESS;
+                                        if (Platform.INSTANCE.isClient()) {
+                                            WebServerThread.stopServer();
+                                            return Command.SINGLE_SUCCESS;
+                                        } else {
+                                            throw ERROR_ON_DEDICATED_SERVER.create();
+                                        }
                                     }
                                 )
                         )
@@ -125,14 +133,18 @@ public class BiomeSquisherCommands {
                                     Commands.argument("port", IntegerArgumentType.integer())
                                         .executes(
                                             commandContext -> {
-                                                int port = commandContext.getArgument("port", Integer.class);
-                                                setupServer(commandContext, port);
-                                                commandContext.getSource().sendSuccess(() -> Component.translatable("commands.biomesquisher.serve.on_port",
-                                                    Component.literal("http://localhost:"+port+"/").withStyle(
-                                                        Style.EMPTY.withClickEvent(new ClickEvent(ClickEvent.Action.OPEN_URL, "http://localhost:"+port+"/")).withUnderlined(true)
-                                                    )
-                                                ), true);
-                                                return Command.SINGLE_SUCCESS;
+                                                if (Platform.INSTANCE.isClient()) {
+                                                    int port = commandContext.getArgument("port", Integer.class);
+                                                    setupServer(commandContext, port);
+                                                    commandContext.getSource().sendSuccess(() -> Component.translatable("commands.biomesquisher.serve.on_port",
+                                                        Component.literal("http://localhost:" + port + "/").withStyle(
+                                                            Style.EMPTY.withClickEvent(new ClickEvent(ClickEvent.Action.OPEN_URL, "http://localhost:" + port + "/")).withUnderlined(true)
+                                                        )
+                                                    ), true);
+                                                    return Command.SINGLE_SUCCESS;
+                                                } else {
+                                                    throw ERROR_ON_DEDICATED_SERVER.create();
+                                                }
                                             }
                                         )
                                 )

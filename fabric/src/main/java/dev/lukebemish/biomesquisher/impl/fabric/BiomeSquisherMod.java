@@ -7,10 +7,12 @@ import dev.lukebemish.biomesquisher.impl.BiomeSquisher;
 import dev.lukebemish.biomesquisher.impl.BiomeSquisherCommands;
 import dev.lukebemish.biomesquisher.impl.InternalScalingSampler;
 import dev.lukebemish.biomesquisher.impl.server.WebServerThread;
+import net.fabricmc.api.EnvType;
 import net.fabricmc.api.ModInitializer;
 import net.fabricmc.fabric.api.command.v2.CommandRegistrationCallback;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerLifecycleEvents;
 import net.fabricmc.fabric.api.event.registry.DynamicRegistries;
+import net.fabricmc.loader.api.FabricLoader;
 import net.minecraft.core.Registry;
 import net.minecraft.core.registries.BuiltInRegistries;
 
@@ -24,6 +26,9 @@ public class BiomeSquisherMod implements ModInitializer {
             BiomeSquisherCommands.register(dispatcher));
         DynamicRegistries.register(BiomeSquisherRegistries.SERIES, Series.CODEC);
         DynamicRegistries.register(BiomeSquisherRegistries.SQUISHER, Squisher.CODEC);
-        ServerLifecycleEvents.SERVER_STOPPING.register(server -> WebServerThread.stopServer());
+
+        if (FabricLoader.getInstance().getEnvironmentType() == EnvType.CLIENT) {
+            ServerLifecycleEvents.SERVER_STOPPING.register(server -> WebServerThread.stopServer());
+        }
     }
 }

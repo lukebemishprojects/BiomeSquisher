@@ -8,4 +8,6 @@ public interface Platform {
 
     Path gameDir();
     Optional<Path> getRootResource(String resource);
+
+    boolean isClient();
 }

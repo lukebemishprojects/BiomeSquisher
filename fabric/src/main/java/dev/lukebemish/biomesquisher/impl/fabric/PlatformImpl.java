@@ -3,6 +3,7 @@ package dev.lukebemish.biomesquisher.impl.fabric;
 import com.google.auto.service.AutoService;
 import dev.lukebemish.biomesquisher.impl.Platform;
 import dev.lukebemish.biomesquisher.impl.Utils;
+import net.fabricmc.api.EnvType;
 import net.fabricmc.loader.api.FabricLoader;
 
 import java.nio.file.Path;
@@ -18,5 +19,10 @@ public class PlatformImpl implements Platform {
     @Override
     public Optional<Path> getRootResource(String resource) {
         return FabricLoader.getInstance().getModContainer(Utils.MOD_ID).orElseThrow().findPath(resource);
+    }
+
+    @Override
+    public boolean isClient() {
+        return FabricLoader.getInstance().getEnvironmentType() == EnvType.CLIENT;
     }
 }

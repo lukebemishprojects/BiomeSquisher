@@ -3,5 +3,6 @@
   "commands.biomesquisher.dump.failed_to_save": "Failed to save biome dump - PNGJ may not be present; check the logs for more information",
   "commands.biomesquisher.dump.failed_to_generate": "Failed to generate biome dump - check the logs for more information",
   "commands.biomesquisher.serve.on_port": "Serving biome dump at %s",
-  "commands.biomesquisher.serve.failed_to_start": "Failed to start biome dump server - check the logs for more information"
+  "commands.biomesquisher.serve.failed_to_start": "Failed to start biome dump server - check the logs for more information",
+  "commands.biomesquisher.on_dedicated_server": "At present, this command cannot be run on the dedicated server"
 }

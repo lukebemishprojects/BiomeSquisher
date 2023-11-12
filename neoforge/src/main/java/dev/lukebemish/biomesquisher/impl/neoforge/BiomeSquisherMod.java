@@ -11,8 +11,10 @@ import dev.lukebemish.biomesquisher.impl.Utils;
 import dev.lukebemish.biomesquisher.impl.server.WebServerThread;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.world.level.levelgen.DensityFunction;
+import net.neoforged.api.distmarker.Dist;
 import net.neoforged.fml.common.Mod;
 import net.neoforged.fml.javafmlmod.FMLJavaModLoadingContext;
+import net.neoforged.fml.loading.FMLEnvironment;
 import net.neoforged.neoforge.common.NeoForge;
 import net.neoforged.neoforge.event.RegisterCommandsEvent;
 import net.neoforged.neoforge.event.server.ServerStoppingEvent;
@@ -33,7 +35,10 @@ public class BiomeSquisherMod {
 
         modBus.addListener(DataPackRegistryEvent.NewRegistry.class, this::createDatapackRegistries);
         gameBus.addListener(RegisterCommandsEvent.class, this::registerCommands);
-        gameBus.addListener(ServerStoppingEvent.class, event -> WebServerThread.stopServer());
+
+        if (FMLEnvironment.dist == Dist.CLIENT) {
+            gameBus.addListener(ServerStoppingEvent.class, event -> WebServerThread.stopServer());
+        }
     }
 
     private void createDatapackRegistries(DataPackRegistryEvent.NewRegistry event) {

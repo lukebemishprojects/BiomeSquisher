@@ -60,6 +60,7 @@ public class BiomeSquisherGameTests {
             try (var stream = Files.walk(root)) {
                 stream.filter(path -> path.getFileName().toString().endsWith(".json") && !Files.isDirectory(path)).forEach(path -> {
                     Path png = path.getParent().resolve(path.getFileName().toString().replace(".json", ".png"));
+
                     if (!Files.exists(png)) {
                         String message = "Missing png for test layout: " + path;
                         Utils.LOGGER.error(message);
@@ -72,7 +73,7 @@ public class BiomeSquisherGameTests {
                     String testName = String.join("/", parts).replace(".json", "");
                     try (var pngStream = Files.newInputStream(png);
                          var jsonReader = Files.newBufferedReader(path)) {
-                        PngReader r = new PngReader(pngStream);
+                        PngReader r = new PngReader(pngStream, false);
                         if (r.imgInfo.cols != 1024 || r.imgInfo.rows != 1024) {
                             var message = "Invalid png size for test layout: " + testName;
                             Utils.LOGGER.error(message);
@@ -91,10 +92,21 @@ public class BiomeSquisherGameTests {
                         for (int i = 0; i < 1024; i++) {
                             int[] row = data[i];
                             ImageLineInt rRow = (ImageLineInt) r.readRow(i);
-                            for (int j = 0; j < 1024; j++) {
-                                row[j] = rRow.getElem(j);
+                            if (rRow.getSize() == 1024*4) {
+                                for (int j = 0; j < 1024*4; j+=4) {
+                                    row[j/4] = rRow.getElem(j+2) | rRow.getElem(j+1) << 8 | rRow.getElem(j) << 16 | rRow.getElem(j+3) << 24;
+                                }
+                            } else if (rRow.getSize() == 1024*3) {
+                                for (int j = 0; j < 1024*3; j+=3) {
+                                    row[j/3] = rRow.getElem(j+2) | rRow.getElem(j+1) << 8 | rRow.getElem(j) << 16 | 0xFF << 24;
+                                }
+                            } else {
+                                for (int j = 0; j < 1024; j++) {
+                                    row[j] = rRow.getElem(j);
+                                }
                             }
                         }
+                        r.close();
                         layouts.add(new LayoutTest(testName, specs, new LayoutTest.Layout(data)));
                     } catch (IOException e) {
                         Utils.LOGGER.error("Failed to load test layout: " + testName, e);

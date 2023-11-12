@@ -19,7 +19,9 @@ public final class BiomeSquisher {
     private BiomeSquisher() {}
 
     public static void init() {
-        Runtime.getRuntime().addShutdownHook(new Thread(WebServerThread::waitOnStopServer));
+        if (Platform.INSTANCE.isClient()) {
+            Runtime.getRuntime().addShutdownHook(new Thread(WebServerThread::waitOnStopServer));
+        }
     }
 
     public static void squishBiomeSource(ResourceManager resourceManager, @Nullable NoiseBasedChunkGenerator generator, MultiNoiseBiomeSource multiNoiseBiomeSource, ResourceKey<LevelStem> key, RegistryAccess access) {

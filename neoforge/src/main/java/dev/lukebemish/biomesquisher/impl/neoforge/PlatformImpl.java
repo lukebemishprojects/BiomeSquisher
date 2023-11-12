@@ -3,7 +3,9 @@ package dev.lukebemish.biomesquisher.impl.neoforge;
 import com.google.auto.service.AutoService;
 import dev.lukebemish.biomesquisher.impl.Platform;
 import dev.lukebemish.biomesquisher.impl.Utils;
+import net.neoforged.api.distmarker.Dist;
 import net.neoforged.fml.ModList;
+import net.neoforged.fml.loading.FMLEnvironment;
 import net.neoforged.fml.loading.FMLPaths;
 
 import java.nio.file.Files;
@@ -24,5 +26,10 @@ public class PlatformImpl implements Platform {
             return Optional.of(path);
         }
         return Optional.empty();
+    }
+
+    @Override
+    public boolean isClient() {
+        return FMLEnvironment.dist == Dist.CLIENT;
     }
 }
