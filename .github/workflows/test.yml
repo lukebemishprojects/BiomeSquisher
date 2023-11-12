@@ -27,6 +27,21 @@ jobs:
                 ./gradlew build publish
               env:
                 PR_NUMBER: ${{ github.event.pull_request.number }}
+            - name: Test - Fabric
+              run: |
+                  ./gradlew :fabric:runGametest
+              env:
+                PR_NUMBER: ${{ github.event.pull_request.number }}
+            - name: Publish Test Report
+              uses: mikepenz/action-junit-report@v4
+              if: success() || failure()
+              with:
+                  report_paths: 'fabric/build/gametest/build/junit.xml'
+            - name: Test - NeoForge
+              run: |
+                  ./gradlew :neoforge:runGameTestServer
+              env:
+                PR_NUMBER: ${{ github.event.pull_request.number }}
             - name: Archive publishable artifacts
               uses: actions/upload-artifact@v3
               with:
