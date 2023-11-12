@@ -57,3 +57,4 @@ jobs:
               with:
                 name: artifacts
                 path: build/repo
+                retention-days: 1
