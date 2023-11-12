@@ -37,7 +37,7 @@ public class BiomeSquisherGameTests {
         int[][] data = new int[1024][];
         try {
             BiomeDumper.dump(context.getLevel(), multiNoiseBiomeSource, test.specs().x(), test.specs().y(), test.specs().slice(), (level, biomeGetter, posibleBiomes) ->
-                    PngOutput.INSTANCE.dumpImage(biomeGetter, posibleBiomes, i -> new int[1024], (i, row) -> data[i] = row, (row, col, v) -> row[col] = v),
+                    PngOutput.INSTANCE_1024.dumpImage(biomeGetter, posibleBiomes, i -> new int[1024], (i, row) -> data[i] = row, (row, col, v) -> row[col] = v),
                 test.specs().frame()
             );
         } catch (IOException e) {

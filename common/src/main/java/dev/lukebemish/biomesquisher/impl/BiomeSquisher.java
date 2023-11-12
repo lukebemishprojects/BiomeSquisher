@@ -3,6 +3,7 @@ package dev.lukebemish.biomesquisher.impl;
 import dev.lukebemish.biomesquisher.impl.injected.Squishable;
 import dev.lukebemish.biomesquisher.impl.mixin.MultiNoiseBiomeSourceAccessor;
 import dev.lukebemish.biomesquisher.impl.mixin.NoiseBasedChunkGeneratorAccessor;
+import dev.lukebemish.biomesquisher.impl.server.WebServerThread;
 import net.minecraft.core.Holder;
 import net.minecraft.core.RegistryAccess;
 import net.minecraft.resources.ResourceKey;
@@ -16,6 +17,10 @@ import org.jetbrains.annotations.Nullable;
 
 public final class BiomeSquisher {
     private BiomeSquisher() {}
+
+    public static void init() {
+        Runtime.getRuntime().addShutdownHook(new Thread(WebServerThread::waitOnStopServer));
+    }
 
     public static void squishBiomeSource(ResourceManager resourceManager, @Nullable NoiseBasedChunkGenerator generator, MultiNoiseBiomeSource multiNoiseBiomeSource, ResourceKey<LevelStem> key, RegistryAccess access) {
         var parameters = ((MultiNoiseBiomeSourceAccessor) multiNoiseBiomeSource).biomesquisher_parameters();

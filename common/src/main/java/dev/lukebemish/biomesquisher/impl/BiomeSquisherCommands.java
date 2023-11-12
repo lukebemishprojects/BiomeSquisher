@@ -3,11 +3,13 @@ package dev.lukebemish.biomesquisher.impl;
 import com.mojang.brigadier.Command;
 import com.mojang.brigadier.CommandDispatcher;
 import com.mojang.brigadier.arguments.FloatArgumentType;
+import com.mojang.brigadier.arguments.IntegerArgumentType;
 import com.mojang.brigadier.arguments.StringArgumentType;
 import com.mojang.brigadier.context.CommandContext;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import com.mojang.brigadier.exceptions.SimpleCommandExceptionType;
 import dev.lukebemish.biomesquisher.impl.dump.BiomeDumper;
+import dev.lukebemish.biomesquisher.impl.server.WebServerThread;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.commands.Commands;
 import net.minecraft.commands.SharedSuggestionProvider;
@@ -19,15 +21,19 @@ import java.util.Locale;
 
 public class BiomeSquisherCommands {
     private static final SimpleCommandExceptionType ERROR_LEVEL_NOT_MULTINOISE = new SimpleCommandExceptionType(
-        Component.translatable("commands.biomesquisher.dumpbiomes.level_not_multinoise")
+        Component.translatable("commands.biomesquisher.dump.level_not_multinoise")
     );
 
     private static final SimpleCommandExceptionType ERROR_SAVING_DUMP = new SimpleCommandExceptionType(
-        Component.translatable("commands.biomesquisher.dumpbiomes.failed_to_save")
+        Component.translatable("commands.biomesquisher.dump.failed_to_save")
     );
 
     private static final SimpleCommandExceptionType ERROR_GENERATING_DUMP = new SimpleCommandExceptionType(
-        Component.translatable("commands.biomesquisher.dumpbiomes.failed_to_generate")
+        Component.translatable("commands.biomesquisher.dump.failed_to_generate")
+    );
+
+    private static final SimpleCommandExceptionType ERROR_STARTING_SERVER = new SimpleCommandExceptionType(
+        Component.translatable("commands.biomesquisher.serve.failed_to_start")
     );
 
     public static void register(CommandDispatcher<CommandSourceStack> dispatcher) {
@@ -99,7 +105,55 @@ public class BiomeSquisherCommands {
                                 )
                         )
                 )
+                .then(
+                    Commands.literal("serve")
+                        .requires(commandSourceStack -> commandSourceStack.hasPermission(4))
+                        .then(
+                            Commands.literal("stop")
+                                .executes(
+                                    commandContext -> {
+                                        WebServerThread.stopServer();
+                                        return Command.SINGLE_SUCCESS;
+                                    }
+                                )
+                        )
+                        .then(
+                            Commands.literal("start")
+                                .then(
+                                    Commands.argument("port", IntegerArgumentType.integer())
+                                        .executes(
+                                            commandContext -> {
+                                                int port = commandContext.getArgument("port", Integer.class);
+                                                setupServer(commandContext, port);
+                                                commandContext.getSource().sendSuccess(() -> Component.translatable("commands.biomesquisher.serve.on_port", port), true);
+                                                return Command.SINGLE_SUCCESS;
+                                            }
+                                        )
+                                )
+                        )
+                )
         );
+    }
+
+    private static void setupServer(CommandContext<CommandSourceStack> commandContext, int port) throws CommandSyntaxException {
+        var biomeSource = commandContext.getSource().getLevel().getChunkSource().getGenerator().getBiomeSource();
+
+        if (!(biomeSource instanceof MultiNoiseBiomeSource multiNoiseBiomeSource)) {
+            throw ERROR_LEVEL_NOT_MULTINOISE.create();
+        }
+
+        try {
+            WebServerThread.startServer(
+                new WebServerThread(
+                    port,
+                    biomeSource.possibleBiomes(),
+                    (x, y, location, frame, output) -> BiomeDumper.dump(commandContext.getSource().getLevel(), multiNoiseBiomeSource, x, y, location, output, frame)
+                )
+            );
+        } catch (Exception e) {
+            Utils.LOGGER.error("Failed to start web server", e);
+            throw ERROR_STARTING_SERVER.create();
+        }
     }
 
     private static int exportFor(CommandContext<CommandSourceStack> commandContext, Dimension x, Dimension y, BiomeDumper.SliceLocation location, BiomeDumper.SliceFrame frame) throws CommandSyntaxException {

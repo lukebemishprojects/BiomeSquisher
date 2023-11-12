@@ -20,7 +20,7 @@ import java.util.Set;
 import java.util.function.BiFunction;
 
 public class BiomeDumper {
-    private static final boolean IS_PNGJ_PRESENT = isPngjPresent();
+    public static final boolean IS_PNGJ_PRESENT = isPngjPresent();
 
     private static boolean isPngjPresent() {
         try {
@@ -65,7 +65,7 @@ public class BiomeDumper {
     public static void dumpPng(Level level, MultiNoiseBiomeSource source, Dimension x, Dimension y, SliceLocation location, SliceFrame frame) throws IOException {
         Output output;
         if (IS_PNGJ_PRESENT) {
-            output = PngOutput.INSTANCE;
+            output = PngOutput.INSTANCE_1024;
         } else {
             output = (l, biomeGetter, possibleBiomes) -> {
                 throw new IOException("PNGJ is not present; cannot export biome dump as PNG!");

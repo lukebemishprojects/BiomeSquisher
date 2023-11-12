@@ -93,6 +93,14 @@ Each squisher referenced by a series should be placed at `data/[namespace]/biome
   * `"temperature"`, `"humidity"`: one of `"start"`, `"center"`, or `"end"`. When resolving which side of an opened hole to move a biome injection to, Biome Squisher will use this; at least one value must be non-`"center"`
 
 Biome Squisher applies registered `series` in alphabetical order, so that biome injection is platform-independent and
-deterministic. Additionally, the mod provides the `/biomesquisher dump` command, which takes the names of two axes,
-values at the remaining four axes, and bounds to view within the two axes, and saves a PNG image slice through the biome
-space along the specified axes, which may be useful for debugging or generally inspecting the biome space.
+deterministic.
+
+The mod provides several commands useful for debugging the biome space in general:
+
+* `/biomesquisher dump`: exports an image of a 2D slice through the biome space. Takes 10 arguments
+  * the first two arguments are the names of the dimensions to use for the x and y axes of the image
+  * the next four arguments are the values in the remaining dimensions to slice at
+  * the final four arguments are the minimum and maximum values of the x axis, followed by the minimum and maximum values of the y axis
+* `/biomesquisher serve`: manage a web server that allows browsing through the biome map
+  * `start`: start the server at the provided port
+  * `stop`: stop any started server

@@ -10,6 +10,7 @@ import net.minecraft.resources.ResourceKey;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.biome.Biome;
 import org.apache.logging.log4j.util.TriConsumer;
+import org.jetbrains.annotations.NotNull;
 
 import java.io.IOException;
 import java.io.OutputStream;
@@ -26,18 +27,21 @@ import java.util.stream.Collectors;
 
 public final class PngOutput implements BiomeDumper.Output {
     private static final DateFormat DATE_FORMAT = new SimpleDateFormat("yyyy.MM.dd.HH.mm.ss", Locale.ROOT);
-    public static final PngOutput INSTANCE = new PngOutput();
+    public static final PngOutput INSTANCE_1024 = new PngOutput(1024);
+    public static final PngOutput INSTANCE_256 = new PngOutput(256);
 
-    private PngOutput() {}
+    private final int resolution;
+    private PngOutput(int resolution) {
+        this.resolution = resolution;
+    }
 
     public <T> Map<ResourceKey<Biome>, Integer> dumpImage(BiFunction<Float, Float, Holder<Biome>> biomeGetter, Set<Holder<Biome>> possibleBiomes, Function<Integer, T> makeRow, BiConsumer<Integer, T> writeRow, TriConsumer<T, Integer, Integer> writeValue) {
-        Map<ResourceKey<Biome>, Integer> hash = possibleBiomes.stream().map(h -> h.unwrapKey().orElse(null)).filter(Objects::nonNull)
-            .collect(Collectors.toMap(Function.identity(), BiomeDumper::hashBiome));
-        for (int i = 0; i < 1024; i++) {
+        Map<ResourceKey<Biome>, Integer> hash = biomeColorHash(possibleBiomes);
+        for (int i = 0; i < resolution; i++) {
             T line = makeRow.apply(i);
-            for (int j = 0; j < 1024; j++) {
+            for (int j = 0; j < resolution; j++) {
                 int finalJ = j;
-                biomeGetter.apply(i/1024f, j/1024f)
+                biomeGetter.apply(i/((float)resolution), j/((float)resolution))
                     .unwrapKey().ifPresent(key -> {
                         int color = hash.getOrDefault(key, 0);
                         writeValue.accept(line, finalJ, color);
@@ -45,6 +49,28 @@ public final class PngOutput implements BiomeDumper.Output {
             }
             writeRow.accept(i, line);
         }
+        return hash;
+    }
+
+    @NotNull
+    public static Map<ResourceKey<Biome>, Integer> biomeColorHash(Set<Holder<Biome>> possibleBiomes) {
+        return possibleBiomes.stream().map(h -> h.unwrapKey().orElse(null)).filter(Objects::nonNull)
+            .collect(Collectors.toMap(Function.identity(), BiomeDumper::hashBiome));
+    }
+
+    public Map<ResourceKey<Biome>, Integer> dumpToOutput(OutputStream os, BiFunction<Float, Float, Holder<Biome>> biomeGetter, Set<Holder<Biome>> possibleBiomes) {
+        Map<ResourceKey<Biome>, Integer> hash;
+        PngWriter writer = new PngWriter(os, new ImageInfo(
+            resolution, resolution, 8, true
+        ));
+        hash = dumpImage(
+            biomeGetter,
+            possibleBiomes,
+            i -> new ImageLineInt(writer.imgInfo),
+            (i, line) -> writer.writeRow(line),
+            (line, j, color) -> ImageLineHelper.setPixelRGBA8(line, j, (color >> 16) & 0xFF, (color >> 8) & 0xFF, color & 0xFF, (color >> 24) & 0xFF)
+        );
+        writer.end();
         return hash;
     }
 
@@ -59,17 +85,7 @@ public final class PngOutput implements BiomeDumper.Output {
         Path outputKeyHtml = outputDir.resolve(levelId + ".key.html");
         Files.createDirectories(outputDir);
         try (OutputStream os = Files.newOutputStream(output)) {
-            PngWriter writer = new PngWriter(os, new ImageInfo(
-                1024, 1024, 8, true
-            ));
-            hash = dumpImage(
-                biomeGetter,
-                possibleBiomes,
-                i -> new ImageLineInt(writer.imgInfo),
-                (i, line) -> writer.writeRow(line),
-                (line, j, color) -> ImageLineHelper.setPixelRGBA8(line, j, (color >> 16) & 0xFF, (color >> 8) & 0xFF, color & 0xFF, (color >> 24) & 0xFF)
-            );
-            writer.end();
+            hash = dumpToOutput(os, biomeGetter, possibleBiomes);
         }
         try (var writer = new OutputStreamWriter(Files.newOutputStream(outputKey))) {
             int maxLength = hash.keySet().stream().mapToInt(k -> k.location().toString().length()).max().orElse(0);
