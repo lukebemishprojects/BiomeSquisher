@@ -52,11 +52,11 @@ jobs:
                   BUILD_CACHE_URL: ${{ secrets.BUILD_CACHE_URL }}
                   BUILD_CACHE_USER: ${{ secrets.BUILD_CACHE_USER }}
                   BUILD_CACHE_PASSWORD: ${{ secrets.BUILD_CACHE_PASSWORD }}
-            - name: Move Tests
+            - name: Move Test Results
               run: |
                   mkdir -p tests/
-                  [[ -f fabric/build/gametest/build/junit.xml ]] && mv fabric/build/gametest/build/junit.xml tests/gametests-fabric.xml || echo "Fabric gametest results not present"
-                  [[ -f neoforge/runs/gameTestServer/build/junit.xml ]] && mv fabric/runs/gameTestServer/build/junit.xml tests/gametests-neoforge.xml || echo "NeoForge gametest results not present"
+                  [[ -f fabric/build/gametest/build/junit.xml ]] && cp fabric/build/gametest/build/junit.xml tests/gametests-fabric.xml || echo "Fabric gametest results not present"
+                  [[ -f neoforge/runs/gameTestServer/build/junit.xml ]] && cp neoforge/runs/gameTestServer/build/junit.xml tests/gametests-neoforge.xml || echo "NeoForge gametest results not present"
             - name: Upload Test Report
               uses: actions/upload-artifact@v3
               if: success() || failure()

@@ -40,14 +40,17 @@ jobs:
                   ./gradlew :neoforge:runGameTestServer
               env:
                 PR_NUMBER: ${{ github.event.pull_request.number }}
+            - name: Move Test Results
+              run: |
+                  mkdir -p tests/
+                  [[ -f fabric/build/gametest/build/junit.xml ]] && cp fabric/build/gametest/build/junit.xml tests/gametests-fabric.xml || echo "Fabric gametest results not present"
+                  [[ -f neoforge/runs/gameTestServer/build/junit.xml ]] && cp neoforge/runs/gameTestServer/build/junit.xml tests/gametests-neoforge.xml || echo "NeoForge gametest results not present"
             - name: Upload Test Report
               uses: actions/upload-artifact@v3
               if: success() || failure()
               with:
                   name: junit-test-results
-                  path: |
-                      fabric/build/gametest/build/junit.xml
-                      neoforge/runs/gameTestServer/build/junit.xml
+                  path: tests
                   retention-days: 1
             - name: Archive publishable artifacts
               uses: actions/upload-artifact@v3
