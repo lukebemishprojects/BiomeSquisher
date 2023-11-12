@@ -2,6 +2,7 @@ package dev.lukebemish.biomesquisher.test.neoforge;
 
 import dev.lukebemish.biomesquisher.impl.Utils;
 import dev.lukebemish.biomesquisher.test.BiomeSquisherGameTests;
+import dev.lukebemish.biomesquisher.test.CustomTestReporter;
 import dev.lukebemish.biomesquisher.test.TestUtils;
 import net.minecraft.gametest.framework.*;
 import net.minecraft.world.level.block.Rotation;
@@ -31,7 +32,7 @@ public class BiomeSquisherTest {
 
         var testOutputDir = FMLPaths.GAMEDIR.get().resolve("build");
         Files.createDirectories(testOutputDir);
-        GlobalTestReporter.replaceWith(new JUnitLikeTestReporter(testOutputDir.resolve("junit.xml").toFile()));
+        GlobalTestReporter.replaceWith(new CustomTestReporter(testOutputDir.resolve("junit.xml").toFile()));
     }
 
     private void registerTests(RegisterGameTestsEvent event) {

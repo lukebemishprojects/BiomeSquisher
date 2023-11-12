@@ -32,6 +32,9 @@ import java.util.List;
 import java.util.function.Function;
 
 public class BiomeSquisherGameTests {
+
+    public static final String EMPTY_STRUCTURE = "biomesquishertests:empty";
+
     private static void testLayout(GameTestHelper context, LayoutTest test) {
         var multiNoiseBiomeSource = getOverworldBiomeList(context.getLevel(), context.getLevel().getServer().getResourceManager());
         int[][] data = new int[1024][];
@@ -119,9 +122,9 @@ public class BiomeSquisherGameTests {
             }
         }
         return layouts.stream().map(test -> new TestFunction(
-            Utils.MOD_ID,
-            Utils.MOD_ID+"/layouts/"+test.location(),
-            "biomesquishertests:empty",
+            Utils.MOD_ID+".layouts",
+            test.location(),
+            EMPTY_STRUCTURE,
             Rotation.NONE,
             100,
             0L,
