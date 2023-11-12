@@ -26,6 +26,7 @@ jobs:
             - uses: gradle/gradle-build-action@v2
               name: Setup Gradle
             - name: Build
+              id: build
               run: |
                   ./gradlew build
               env:
@@ -34,6 +35,7 @@ jobs:
                   BUILD_CACHE_USER: ${{ secrets.BUILD_CACHE_USER }}
                   BUILD_CACHE_PASSWORD: ${{ secrets.BUILD_CACHE_PASSWORD }}
             - name: Test - Fabric
+              if: (success() || failure()) && steps.build.conclusion == 'success'
               run: |
                   ./gradlew :fabric:runGametest
               env:
@@ -41,14 +43,8 @@ jobs:
                   BUILD_CACHE_URL: ${{ secrets.BUILD_CACHE_URL }}
                   BUILD_CACHE_USER: ${{ secrets.BUILD_CACHE_USER }}
                   BUILD_CACHE_PASSWORD: ${{ secrets.BUILD_CACHE_PASSWORD }}
-            - name: Upload Test Report
-              uses: actions/upload-artifact@v3
-              if: always()
-              with:
-                  name: junit-test-results
-                  path: 'fabric/build/gametest/build/junit.xml'
-                  retention-days: 1
             - name: Test - NeoForge
+              if: (success() || failure()) && steps.build.conclusion == 'success'
               run: |
                   ./gradlew :neoforge:runGameTestServer
               env:
@@ -56,6 +52,18 @@ jobs:
                   BUILD_CACHE_URL: ${{ secrets.BUILD_CACHE_URL }}
                   BUILD_CACHE_USER: ${{ secrets.BUILD_CACHE_USER }}
                   BUILD_CACHE_PASSWORD: ${{ secrets.BUILD_CACHE_PASSWORD }}
+            - name: Move Tests
+              run: |
+                  mkdir -p tests/
+                  [[ -f fabric/build/gametest/build/junit.xml ]] && mv fabric/build/gametest/build/junit.xml tests/gametests-fabric.xml || echo "Fabric gametest results not present"
+                  [[ -f neoforge/runs/gameTestServer/build/junit.xml ]] && mv fabric/runs/gameTestServer/build/junit.xml tests/gametests-neoforge.xml || echo "NeoForge gametest results not present"
+            - name: Upload Test Report
+              uses: actions/upload-artifact@v3
+              if: success() || failure()
+              with:
+                  name: junit-test-results
+                  path: tests
+                  retention-days: 1
             - name: Publish
               run: |
                   ./gradlew publish

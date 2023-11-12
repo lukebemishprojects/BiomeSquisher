@@ -7,11 +7,15 @@ import net.minecraft.gametest.framework.*;
 import net.minecraft.world.level.block.Rotation;
 import net.neoforged.fml.common.Mod;
 import net.neoforged.fml.javafmlmod.FMLJavaModLoadingContext;
+import net.neoforged.fml.loading.FMLPaths;
 import net.neoforged.neoforge.event.RegisterGameTestsEvent;
 import net.neoforged.neoforge.gametest.GameTestHolder;
 
+import javax.xml.parsers.ParserConfigurationException;
+import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
+import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
@@ -20,10 +24,14 @@ import java.util.function.Consumer;
 
 @Mod(TestUtils.MOD_ID)
 public class BiomeSquisherTest {
-    public BiomeSquisherTest() {
+    public BiomeSquisherTest() throws ParserConfigurationException, IOException {
         var modBus = FMLJavaModLoadingContext.get().getModEventBus();
 
         modBus.addListener(RegisterGameTestsEvent.class, this::registerTests);
+
+        var testOutputDir = FMLPaths.GAMEDIR.get().resolve("build");
+        Files.createDirectories(testOutputDir);
+        GlobalTestReporter.replaceWith(new JUnitLikeTestReporter(testOutputDir.resolve("junit.xml").toFile()));
     }
 
     private void registerTests(RegisterGameTestsEvent event) {

@@ -23,27 +23,32 @@ jobs:
               with:
                 cache-read-only: ${{ !startsWith(github.ref, 'refs/heads/1.') }}
             - name: Build
+              id: build
               run: |
                 ./gradlew build publish
               env:
                 PR_NUMBER: ${{ github.event.pull_request.number }}
             - name: Test - Fabric
+              if: (success() || failure()) && steps.build.conclusion == 'success'
               run: |
                   ./gradlew :fabric:runGametest
               env:
                 PR_NUMBER: ${{ github.event.pull_request.number }}
-            - name: Upload Test Report
-              uses: actions/upload-artifact@v3
-              if: always()
-              with:
-                  name: junit-test-results
-                  path: 'fabric/build/gametest/build/junit.xml'
-                  retention-days: 1
             - name: Test - NeoForge
+              if: (success() || failure()) && steps.build.conclusion == 'success'
               run: |
                   ./gradlew :neoforge:runGameTestServer
               env:
                 PR_NUMBER: ${{ github.event.pull_request.number }}
+            - name: Upload Test Report
+              uses: actions/upload-artifact@v3
+              if: success() || failure()
+              with:
+                  name: junit-test-results
+                  path: |
+                      fabric/build/gametest/build/junit.xml
+                      neoforge/runs/gameTestServer/build/junit.xml
+                  retention-days: 1
             - name: Archive publishable artifacts
               uses: actions/upload-artifact@v3
               with:
