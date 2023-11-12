@@ -32,11 +32,13 @@ jobs:
                   ./gradlew :fabric:runGametest
               env:
                 PR_NUMBER: ${{ github.event.pull_request.number }}
-            - name: Publish Test Report
-              uses: mikepenz/action-junit-report@v4
-              if: success() || failure()
+            - name: Upload Test Report
+              uses: actions/upload-artifact@v3
+              if: always()
               with:
-                  report_paths: 'fabric/build/gametest/build/junit.xml'
+                  name: junit-test-results
+                  path: 'fabric/build/gametest/build/junit.xml'
+                  retention-days: 1
             - name: Test - NeoForge
               run: |
                   ./gradlew :neoforge:runGameTestServer

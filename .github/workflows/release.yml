@@ -36,25 +36,6 @@ jobs:
                 BUILD_CACHE_URL: ${{ secrets.BUILD_CACHE_URL }}
                 BUILD_CACHE_USER: ${{ secrets.BUILD_CACHE_USER }}
                 BUILD_CACHE_PASSWORD: ${{ secrets.BUILD_CACHE_PASSWORD }}
-            - name: Test - Fabric
-              run: |
-                  ./gradlew :fabric:runGametest
-              env:
-                  BUILD_CACHE_URL: ${{ secrets.BUILD_CACHE_URL }}
-                  BUILD_CACHE_USER: ${{ secrets.BUILD_CACHE_USER }}
-                  BUILD_CACHE_PASSWORD: ${{ secrets.BUILD_CACHE_PASSWORD }}
-            - name: Publish Test Report
-              uses: mikepenz/action-junit-report@v4
-              if: success() || failure()
-              with:
-                  report_paths: 'fabric/build/gametest/build/junit.xml'
-            - name: Test - NeoForge
-              run: |
-                  ./gradlew :neoforge:runGameTestServer
-              env:
-                  BUILD_CACHE_URL: ${{ secrets.BUILD_CACHE_URL }}
-                  BUILD_CACHE_USER: ${{ secrets.BUILD_CACHE_USER }}
-                  BUILD_CACHE_PASSWORD: ${{ secrets.BUILD_CACHE_PASSWORD }}
             - name: Publish
               run: |
                   ./gradlew publish curseforge modrinth closeAndReleaseSonatypeStagingRepository
