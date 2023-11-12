@@ -21,17 +21,17 @@ import java.util.Objects;
 
 public class CustomTestReporter implements TestReporter {
     private final Document document;
-    private final Element testSuite;
+    private final Element testSuites;
     private final File destination;
 
-    private final Map<String, Element> testSuites = Maps.newHashMap();
+    private final Map<String, Element> batchTestSuites = Maps.newHashMap();
     private final Map<String, Long> testSuiteTimes = Maps.newHashMap();
 
     public CustomTestReporter(File destination) throws ParserConfigurationException {
         this.document = DocumentBuilderFactory.newInstance().newDocumentBuilder().newDocument();
-        this.testSuite = this.document.createElement("testsuite");
-        this.testSuite.setAttribute("timestamp", DateTimeFormatter.ISO_INSTANT.format(Instant.now()));
-        this.document.appendChild(testSuite);
+        this.testSuites = this.document.createElement("testsuites");
+        this.testSuites.setAttribute("timestamp", DateTimeFormatter.ISO_INSTANT.format(Instant.now()));
+        this.document.appendChild(testSuites);
         this.destination = destination;
     }
 
@@ -54,11 +54,11 @@ public class CustomTestReporter implements TestReporter {
         element.setAttribute("name", testInfo.getTestName());
         element.setAttribute("classname", testInfo.getTestName());
         element.setAttribute("time", String.valueOf((double)testInfo.getRunTime() / 1000.0));
-        var batch = testSuites.computeIfAbsent(testInfo.getTestFunction().getBatchName(), s -> {
+        var batch = batchTestSuites.computeIfAbsent(testInfo.getTestFunction().getBatchName(), s -> {
             Element batchElement = this.document.createElement("testsuite");
             batchElement.setAttribute("name", s);
             batchElement.setAttribute("timestamp", DateTimeFormatter.ISO_INSTANT.format(Instant.now()));
-            this.testSuite.appendChild(batchElement);
+            this.testSuites.appendChild(batchElement);
             return batchElement;
         });
         var batchTime = testSuiteTimes.getOrDefault(testInfo.getTestFunction().getBatchName(), 0L);
@@ -76,11 +76,11 @@ public class CustomTestReporter implements TestReporter {
     public void finish() {
         long totalTime = 0;
         for (var entry : testSuiteTimes.entrySet()) {
-            var batchElement = Objects.requireNonNull(testSuites.get(entry.getKey()));
+            var batchElement = Objects.requireNonNull(batchTestSuites.get(entry.getKey()));
             batchElement.setAttribute("time", String.valueOf((double)entry.getValue() / 1000.0));
             totalTime += entry.getValue();
         }
-        this.testSuite.setAttribute("time", String.valueOf((double)totalTime / 1000.0));
+        this.testSuites.setAttribute("time", String.valueOf((double)totalTime / 1000.0));
 
         try {
             TransformerFactory.newInstance().newTransformer().transform(
