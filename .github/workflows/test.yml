@@ -14,14 +14,21 @@ jobs:
             - uses: actions/cache/restore@v3
               with:
                 path: |
-                  .gradle/quilt-loom-cache
-                  .gradle/loom-cache
+                    **/.gradle/caches
+                    **/.gradle/repositories
+                    **/.gradle/loom-cache
+                    **/.gradle/quilt-loom-cache
                 key: ${{ runner.os }}-gradle-${{ hashFiles('**/libs.versions.*', '**/*.gradle*', '**/gradle-wrapper.properties') }}
                 restore-keys: ${{ runner.os }}-gradle-
             - uses: gradle/gradle-build-action@v2
               name: Setup Gradle
               with:
                 cache-read-only: ${{ !startsWith(github.ref, 'refs/heads/1.') }}
+            - name: Setup NeoForge
+              run: |
+                  ./gradlew :neoforge:neoFormRecompile --build-cache
+              env:
+                PR_NUMBER: ${{ github.event.pull_request.number }}
             - name: Build
               id: build
               run: |

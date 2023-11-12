@@ -21,37 +21,37 @@ jobs:
                 path: |
                     **/.gradle/caches
                     **/.gradle/repositories
+                    **/.gradle/loom-cache
+                    **/.gradle/quilt-loom-cache
                 key: ${{ runner.os }}-gradle-${{ hashFiles('**/libs.versions.*', '**/*.gradle*', '**/gradle-wrapper.properties') }}
                 restore-keys: ${{ runner.os }}-gradle-
             - uses: gradle/gradle-build-action@v2
               name: Setup Gradle
+              with:
+                  gradle-home-cache-cleanup: true
+            - name: Setup NeoForge
+              run: |
+                  ./gradlew :neoforge:neoFormRecompile --build-cache
+              env:
+                  SNAPSHOT_MAVEN_URL: https://maven.lukebemish.dev/snapshots/
             - name: Build
               id: build
               run: |
                   ./gradlew build
               env:
                   SNAPSHOT_MAVEN_URL: https://maven.lukebemish.dev/snapshots/
-                  BUILD_CACHE_URL: ${{ secrets.BUILD_CACHE_URL }}
-                  BUILD_CACHE_USER: ${{ secrets.BUILD_CACHE_USER }}
-                  BUILD_CACHE_PASSWORD: ${{ secrets.BUILD_CACHE_PASSWORD }}
             - name: Test - Fabric
               if: (success() || failure()) && steps.build.conclusion == 'success'
               run: |
                   ./gradlew :fabric:runGametest
               env:
                   SNAPSHOT_MAVEN_URL: https://maven.lukebemish.dev/snapshots/
-                  BUILD_CACHE_URL: ${{ secrets.BUILD_CACHE_URL }}
-                  BUILD_CACHE_USER: ${{ secrets.BUILD_CACHE_USER }}
-                  BUILD_CACHE_PASSWORD: ${{ secrets.BUILD_CACHE_PASSWORD }}
             - name: Test - NeoForge
               if: (success() || failure()) && steps.build.conclusion == 'success'
               run: |
                   ./gradlew :neoforge:runGameTestServer
               env:
                   SNAPSHOT_MAVEN_URL: https://maven.lukebemish.dev/snapshots/
-                  BUILD_CACHE_URL: ${{ secrets.BUILD_CACHE_URL }}
-                  BUILD_CACHE_USER: ${{ secrets.BUILD_CACHE_USER }}
-                  BUILD_CACHE_PASSWORD: ${{ secrets.BUILD_CACHE_PASSWORD }}
             - name: Move Test Results
               run: |
                   mkdir -p tests/
