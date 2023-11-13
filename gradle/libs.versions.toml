@@ -6,7 +6,7 @@ parchment_mappings = "2023.09.03"
 fabric_loader = "0.14.24"
 fabric_api = "0.89.3+1.20.2"
 
-neoforge = "20.2.23-beta"
+neoforge = "20.2.51-beta"
 neogradle = "7.0.26"
 
 jetbrains_annotations = "24.0.1"
