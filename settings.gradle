@@ -39,7 +39,6 @@ rootProject.name = "biomesquisher"
 include 'common', 'fabric', 'neoforge'
 
 buildCache {
-    // Build caching is currently rather useless for neoforge projects, due to the nature of NeoGradle 7
     if (providers.gradleProperty('buildCacheUrl').orNull) {
         remote(HttpBuildCache) {
             url = providers.gradleProperty('buildCacheUrl').orNull
