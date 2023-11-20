@@ -34,6 +34,9 @@ jobs:
                   ./gradlew build
               env:
                   SNAPSHOT_MAVEN_URL: https://maven.lukebemish.dev/snapshots/
+                  BUILD_CACHE_URL: ${{ secrets.BUILD_CACHE_URL }}
+                  BUILD_CACHE_USER: ${{ secrets.BUILD_CACHE_USER }}
+                  BUILD_CACHE_PASSWORD: ${{ secrets.BUILD_CACHE_PASSWORD }}
             - name: Test - Fabric
               if: (success() || failure()) && steps.build.conclusion == 'success'
               run: |
