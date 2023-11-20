@@ -21,8 +21,6 @@ jobs:
               name: Setup Gradle
               with:
                 cache-read-only: ${{ !startsWith(github.ref, 'refs/heads/1.') }}
-                gradle-home-cache-includes: |
-                    caches/fabric-loom
                 gradle-home-cache-excludes: |
                     caches/build-cache-1
               env:
