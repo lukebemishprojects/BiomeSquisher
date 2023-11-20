@@ -18,6 +18,9 @@ registries:
   lukebemish:
       type: maven-repository
       url: https://maven.lukebemish.dev/
+  architectury:
+      type: maven-repository
+      url: https://maven.architectury.dev/
 updates:
   - package-ecosystem: "gradle"
     directory: "/"
@@ -28,17 +31,14 @@ updates:
       - parchment
       - neoforge
       - lukebemish
+      - architectury
     schedule:
       interval: "weekly"
     ignore:
-      - dependency-name: "*modsdotgroovy*"
-        update-types: ["version-update:semver-major"]
       - dependency-name: "com.mojang:minecraft"
-        update-types: ["version-update:semver-major"]
-      - dependency-name: "*neoforge*"
-        update-types: ["version-update:semver-major"]
-      - dependency-name: "net.fabricmc*"
-        update-types: ["version-update:semver-major"]
+        update-types: ["version-update:semver-minor"]
+      - dependency-name: "net.neoforged.neoforge"
+        update-types: ["version-update:semver-minor"]
   - package-ecosystem: "github-actions"
     directory: "/"
     schedule:

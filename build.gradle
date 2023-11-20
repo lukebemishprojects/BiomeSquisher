@@ -1,6 +1,6 @@
 plugins {
     alias libs.plugins.mdg.plugin
-    alias libs.plugins.fabric.loom apply false
+    alias libs.plugins.architectury.loom apply false
     alias libs.plugins.managedversioning
     alias libs.plugins.nexuspublish
 }
@@ -26,6 +26,7 @@ subprojects { p ->
     apply plugin: 'java-library'
     apply plugin: 'maven-publish'
     apply plugin: 'signing'
+    apply plugin: 'dev.architectury.loom'
 
     group = rootProject.group
     version = rootProject.version
@@ -65,9 +66,19 @@ subprojects { p ->
             name = 'ParchmentMC'
             url = 'https://maven.parchmentmc.org'
         }
+        maven {
+            name = 'NeoForged'
+            url = 'https://maven.neoforged.net/releases'
+        }
     }
 
     dependencies {
+        minecraft libs.minecraft
+        mappings loom.layered() {
+            officialMojangMappings()
+            parchment("org.parchmentmc.data:parchment-${libs.versions.parchment.minecraft.get()}:${libs.versions.parchment.mappings.get()}@zip")
+        }
+
         compileOnly libs.jetbrains.annotations
         testCompileOnly libs.jetbrains.annotations
         implementation libs.pngj

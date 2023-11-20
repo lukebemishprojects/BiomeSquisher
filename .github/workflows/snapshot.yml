@@ -19,19 +19,13 @@ jobs:
             - uses: actions/cache@v3
               with:
                 path: |
-                    **/.gradle/caches
-                    **/.gradle/repositories
                     **/.gradle/loom-cache
-                    **/.gradle/quilt-loom-cache
                 key: ${{ runner.os }}-gradle-${{ hashFiles('**/libs.versions.*', '**/*.gradle*', '**/gradle-wrapper.properties') }}
                 restore-keys: ${{ runner.os }}-gradle-
             - uses: gradle/gradle-build-action@v2
               name: Setup Gradle
               with:
                   gradle-home-cache-cleanup: true
-            - name: Setup NeoForge
-              run: |
-                  ./gradlew :neoforge:neoFormRecompile --build-cache
               env:
                   SNAPSHOT_MAVEN_URL: https://maven.lukebemish.dev/snapshots/
             - name: Build
@@ -49,14 +43,14 @@ jobs:
             - name: Test - NeoForge
               if: (success() || failure()) && steps.build.conclusion == 'success'
               run: |
-                  ./gradlew :neoforge:runGameTestServer
+                  ./gradlew :neoforge:runGametest
               env:
                   SNAPSHOT_MAVEN_URL: https://maven.lukebemish.dev/snapshots/
             - name: Move Test Results
               run: |
                   mkdir -p tests/
                   [[ -f fabric/build/gametest/build/junit.xml ]] && cp fabric/build/gametest/build/junit.xml tests/gametests-fabric.xml || echo "Fabric gametest results not present"
-                  [[ -f neoforge/runs/gameTestServer/build/junit.xml ]] && cp neoforge/runs/gameTestServer/build/junit.xml tests/gametests-neoforge.xml || echo "NeoForge gametest results not present"
+                  [[ -f neoforge/build/gametest/build/junit.xml ]] && cp neoforge/build/gametest/build/junit.xml tests/gametests-neoforge.xml || echo "NeoForge gametest results not present"
             - name: Upload Test Report
               uses: actions/upload-artifact@v3
               if: success() || failure()

@@ -1,66 +1,67 @@
 plugins {
-    alias libs.plugins.neogradle.userdev
     alias libs.plugins.curseforgegradle
     alias libs.plugins.minotaur
 }
 
-sourceSets {
-    main.runs.modIdentifier = project.modid
-    test.runs.modIdentifier = project.modid+'tests'
-}
+apply plugin: 'dev.architectury.loom'
 
-runs {
-    configureEach {
-        systemProperty 'forge.logging.console.level', 'debug'
-        modSources.add project.sourceSets.main
-        modSources.add project.sourceSets.test
+loom {
+    mods {
+        create("${project.modid}tests") {
+            sourceSet sourceSets.test
+        }
     }
 
-    client {}
-
-    server {
-        programArgument '--nogui'
+    runs {
+        gametest {
+            inherit server
+            forgeTemplate('server')
+            name "Game Test"
+            vmArg "-Dneoforge.enableGameTest=true"
+            vmArg "-Dneoforge.gameTestServer=true"
+            vmArg "-Dneoforge.enabledGameTestNamespaces=${project.modid},${project.modid}tests"
+            runDir "build/gametest"
+        }
     }
 
-    gameTestServer {
-        programArgument '--nogui'
+    runs.configureEach {
+        name = 'NeoForge: ' + name
+        ideConfigGenerated = true
     }
-}
-
-jarJar.enable()
-
-configurations {
-    minecraftLibrary
-    minecraftRuntime
-    implementation.extendsFrom minecraftLibrary
-    minecraftRuntime.extendsFrom minecraftLibrary
 }
 
 dependencies {
-    implementation libs.neoforge
+    neoForge libs.neoforge
 
     compileOnly project(":common")
     testCompileOnly project(":common")
     testCompileOnly project(":common").sourceSets.test.output
 
-    minecraftLibrary libs.pngj
-    jarJar(libs.pngj.get()) {
-        jarJar.ranged(it, "[${libs.versions.pngj.get()},)")
-    }
+    implementation libs.pngj
+    include libs.pngj
+    forgeRuntimeLibrary libs.pngj
 
-    jarJar(libs.mixinextras.neoforge.get()) {
-        jarJar.ranged(it, "[${libs.versions.mixinextras.get()},)")
-    }
+    testImplementation sourceSets.main.output
+
     implementation libs.mixinextras.neoforge
+    include libs.mixinextras.neoforge
 }
 
-import net.neoforged.gradle.userdev.runtime.tasks.ClasspathSerializer
-tasks.withType(ClasspathSerializer).configureEach {
-    it.inputFiles.from(configurations.minecraftRuntime)
-}
+import groovy.json.JsonOutput
+import groovy.json.JsonSlurper
 
 processResources {
     from project(":common").sourceSets.main.resources
+
+    doLast {
+        fileTree(dir: outputs.files.asPath, include: "*.mixins.json").each { File file ->
+            def obj = new JsonSlurper().parse(file)
+            if (obj.refmap) {
+                obj.remove('refmap')
+            }
+            file.text = JsonOutput.toJson(obj)
+        }
+    }
 }
 
 tasks.named('compileJava', JavaCompile).configure {
@@ -81,6 +82,16 @@ processTestResources {
         into 'META-INF'
     }
     from project(":common").sourceSets.test.resources
+
+    doLast {
+        fileTree(dir: outputs.files.asPath, include: "*.mixins.json").each { File file ->
+            def obj = new JsonSlurper().parse(file)
+            if (obj.refmap) {
+                obj.remove('refmap')
+            }
+            file.text = JsonOutput.toJson(obj)
+        }
+    }
 }
 
 tasks.named('compileTestJava', JavaCompile).configure {
@@ -95,14 +106,6 @@ javadocJar {
     from project(":common").sourceSets.main.allJava
 }
 
-tasks.named('build').configure {
-    dependsOn 'jarJar'
-}
-
-publishing.publications.mavenJava {
-    artifact tasks.jarJar
-}
-
 import net.darkhax.curseforgegradle.TaskPublishCurseForge
 
 if (System.getenv('CURSEFORGE_KEY')) {
@@ -110,7 +113,7 @@ if (System.getenv('CURSEFORGE_KEY')) {
         disableVersionDetection()
         apiToken = System.getenv('CURSEFORGE_KEY')
         def projectId = '930256'
-        def mainFile = upload(projectId, tasks.jarJar)
+        def mainFile = upload(projectId, tasks.remapJar)
         mainFile.displayName = "${project.modname} [NeoForge] v$project.version"
         mainFile.releaseType = "${project.releasetype}"
         mainFile.addModLoader('NeoForge')
@@ -119,7 +122,7 @@ if (System.getenv('CURSEFORGE_KEY')) {
     }
 
     afterEvaluate {
-        tasks.curseforge.dependsOn tasks.jarJar
+        tasks.curseforge.dependsOn tasks.remapJar
     }
 }
 
@@ -130,7 +133,7 @@ if (System.getenv('MODRINTH_KEY')) {
         versionNumber = "$project.version"
         versionType = "${project.releasetype}"
         detectLoaders = false
-        uploadFile = tasks.jarJar
+        uploadFile = tasks.remapJar
         gameVersions = ["${libs.versions.minecraft.get()}"]
         loaders = ['neoforge']
         dependencies {}

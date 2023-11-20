@@ -13,6 +13,10 @@ pluginManagement {
             name = "Luke's Maven"
             url = 'https://maven.lukebemish.dev/releases/'
         }
+        maven {
+            name = 'Architectury'
+            url "https://maven.architectury.dev/"
+        }
 	}
 }
 
@@ -36,7 +40,6 @@ include 'common', 'fabric', 'neoforge'
 
 buildCache {
     // Build caching is currently rather useless for neoforge projects, due to the nature of NeoGradle 7
-    /*
     if (providers.gradleProperty('buildCacheUrl').orNull) {
         remote(HttpBuildCache) {
             url = providers.gradleProperty('buildCacheUrl').orNull
@@ -44,7 +47,11 @@ buildCache {
                 username = providers.gradleProperty('buildCacheUser').orNull
                 password = providers.gradleProperty('buildCachePassword').orNull
             }
-            push = true
+            if (providers.gradleProperty('buildCachePush').orNull) {
+                push = true
+            } else {
+                push = false
+            }
         }
     } else if (System.getenv('BUILD_CACHE_URL')) {
         remote(HttpBuildCache) {
@@ -53,8 +60,11 @@ buildCache {
                 username = System.getenv('BUILD_CACHE_USER')
                 password = System.getenv('BUILD_CACHE_PASSWORD')
             }
-            push = true
+            if (System.getenv('BUILD_CACHE_PUSH') || System.getenv('CI')) {
+                push = true
+            } else {
+                push = false
+            }
         }
     }
-    */
 }
