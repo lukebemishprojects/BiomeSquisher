@@ -12,7 +12,7 @@ jetbrains_annotations = "24.0.1"
 autoservice = "1.1.1"
 pngj = "2.1.0"
 
-mixinextras = "0.2.0"
+mixinextras = "0.2.1"
 
 mdg_dsl = "1.5.1"
 
