@@ -54,8 +54,8 @@ jobs:
             - name: Move Test Results
               run: |
                   mkdir -p build/tests/
-                  [[ -f fabric/build/gametest/build/junit.xml ]] && cp fabric/build/gametest/build/junit.xml tests/gametests-fabric.xml || echo "Fabric gametest results not present"
-                  [[ -f neoforge/build/gametest/build/junit.xml ]] && cp neoforge/build/gametest/build/junit.xml tests/gametests-neoforge.xml || echo "NeoForge gametest results not present"
+                  [[ -f fabric/build/gametest/build/junit.xml ]] && cp fabric/build/gametest/build/junit.xml build/tests/gametests-fabric.xml || echo "Fabric gametest results not present"
+                  [[ -f neoforge/build/gametest/build/junit.xml ]] && cp neoforge/build/gametest/build/junit.xml build/tests/gametests-neoforge.xml || echo "NeoForge gametest results not present"
             - name: Upload Test Report
               uses: actions/upload-artifact@v3
               if: success() || failure()
