@@ -53,7 +53,7 @@ jobs:
                   SNAPSHOT_MAVEN_URL: https://maven.lukebemish.dev/snapshots/
             - name: Move Test Results
               run: |
-                  mkdir -p tests/
+                  mkdir -p build/tests/
                   [[ -f fabric/build/gametest/build/junit.xml ]] && cp fabric/build/gametest/build/junit.xml tests/gametests-fabric.xml || echo "Fabric gametest results not present"
                   [[ -f neoforge/build/gametest/build/junit.xml ]] && cp neoforge/build/gametest/build/junit.xml tests/gametests-neoforge.xml || echo "NeoForge gametest results not present"
             - name: Upload Test Report
@@ -61,7 +61,7 @@ jobs:
               if: success() || failure()
               with:
                   name: junit-test-results
-                  path: tests
+                  path: build/tests
                   retention-days: 1
             - name: Publish
               run: |
