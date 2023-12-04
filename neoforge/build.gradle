@@ -42,9 +42,6 @@ dependencies {
     forgeRuntimeLibrary libs.pngj
 
     testImplementation sourceSets.main.output
-
-    implementation libs.mixinextras.neoforge
-    include libs.mixinextras.neoforge
 }
 
 import groovy.json.JsonOutput

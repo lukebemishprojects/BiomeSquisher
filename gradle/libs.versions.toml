@@ -6,7 +6,7 @@ parchment_mappings = "2023.09.03"
 fabric_loader = "0.14.24"
 fabric_api = "0.89.3+1.20.2"
 
-neoforge = "20.2.59-beta"
+neoforge = "20.2.86"
 
 jetbrains_annotations = "24.0.1"
 autoservice = "1.1.1"
@@ -33,7 +33,6 @@ pngj = { module = "ar.com.hjg:pngj", version.ref = "pngj" }
 
 mixinextras_fabric = { module = "io.github.llamalad7:mixinextras-fabric", version.ref = "mixinextras" }
 mixinextras_common = { module = "io.github.llamalad7:mixinextras-common", version.ref = "mixinextras" }
-mixinextras_neoforge = { module = "io.github.llamalad7:mixinextras-neoforge", version.ref = "mixinextras" }
 
 [plugins]
 architectury_loom = { id = "dev.architectury.loom", version = "1.4.367" }
