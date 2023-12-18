@@ -37,7 +37,7 @@ mixinextras_common = { module = "io.github.llamalad7:mixinextras-common", versio
 [plugins]
 architectury_loom = { id = "dev.architectury.loom", version = "1.4.367" }
 mdg_plugin = {id = "org.groovymc.modsdotgroovy", version = "1.4.3"}
-curseforgegradle = {id = "net.darkhax.curseforgegradle", version = "1.1.17"}
+curseforgegradle = {id = "net.darkhax.curseforgegradle", version = "1.1.18"}
 minotaur = {id = "com.modrinth.minotaur", version = "2.8.1"}
 managedversioning = {id = "dev.lukebemish.managedversioning", version.ref = "managedversioning"}
 nexuspublish = {id = "io.github.gradle-nexus.publish-plugin", version.ref = "nexuspublish"}
