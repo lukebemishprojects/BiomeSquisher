@@ -19,7 +19,7 @@ jobs:
                     **/.gradle/loom-cache
                 key: ${{ runner.os }}-gradle-${{ hashFiles('**/libs.versions.*', '**/*.gradle*', '**/gradle-wrapper.properties') }}
                 restore-keys: ${{ runner.os }}-gradle-
-            - uses: gradle/gradle-build-action@v2
+            - uses: gradle/gradle-build-action@v3
               name: Setup Gradle
               with:
                   gradle-home-cache-cleanup: true
