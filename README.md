@@ -1,6 +1,6 @@
 # Biome Squisher
 
-[![Central](https://img.shields.io/badge/maven_central-blue?style=for-the-badge)](https://central.sonatype.com/search?q=dev.lukebemish.biomesquisher)
+[![Central](https://img.shields.io/badge/maven_central-blue?style=for-the-badge)](https://central.sonatype.com/artifact/dev.lukebemish/biomesquisher)
 [![Latest Version](https://img.shields.io/modrinth/v/biomesquisher?label=latest&style=for-the-badge)](https://modrinth.com/mod/biomesquisher)
 [![CodeFactor](https://www.codefactor.io/repository/github/lukebemishprojects/biomesquisher/badge?style=for-the-badge)](https://www.codefactor.io/repository/github/lukebemishprojects/biomesquisher)
 [![Snapshot](https://img.shields.io/github/actions/workflow/status/lukebemishprojects/BiomeSquisher/snapshot.yml?style=for-the-badge)](https://github.com/lukebemishprojects/BiomeSquisher/actions/workflows/snapshot.yml)
@@ -105,3 +105,29 @@ The mod provides several commands useful for debugging the biome space in genera
 * `/biomesquisher serve`: manage a web server that allows browsing through the biome map
   * `start`: start the server at the provided port
   * `stop`: stop any started server
+
+### Depending on BiomeSquisher
+
+Available versions of BiomeSquisher are tagged on this repository. BiomeSquisher is available on maven central at `dev.lukebemish:biomesquisher`; versions for different loaders may be selected by capability.
+
+Adding artifact on NeoForge:
+```gradle
+dependencies {
+    implementation('dev.lukebemish:biomesquisher:<version>') {
+        capabilities {
+            requireCapability('dev.lukebemish:biomesquisher-neoforge')
+        }
+    }
+}
+```
+
+Adding artifact on Quilt or Fabric:
+```gradle
+dependencies {
+    modImplementation('dev.lukebemish:biomesquisher:<version>') {
+        capabilities {
+            requireCapability('dev.lukebemish:biomesquisher-fabric')
+        }
+    }
+}
+```
