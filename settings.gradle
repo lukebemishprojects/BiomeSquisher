@@ -1,69 +1,68 @@
 pluginManagement {
-	repositories {
-        gradlePluginPortal()
-		maven {
-			name = 'Fabric'
-			url = 'https://maven.fabricmc.net/'
-		}
+    repositories {
+        mavenCentral()
+
+        maven {
+            name = 'Fabric'
+            url = 'https://maven.fabricmc.net/'
+        }
+
         maven {
             name = 'NeoForged'
-            url = 'https://maven.neoforged.net/releases'
+            url = 'https://maven.neoforged.net'
         }
+
         maven {
             name = "Luke's Maven"
-            url = 'https://maven.lukebemish.dev/releases/'
+            url = 'https://maven.lukebemish.dev/releases'
         }
+
         maven {
             name = 'Architectury'
             url "https://maven.architectury.dev/"
         }
-	}
+
+        gradlePluginPortal()
+    }
 }
 
 plugins {
-    id 'com.gradle.enterprise' version '3.15'
-}
-
-gradleEnterprise {
-    if (System.getenv('CI') != null) {
-        buildScan {
-            publishAlways()
-            termsOfServiceUrl = "https://gradle.com/terms-of-service"
-            termsOfServiceAgree = "yes"
-        }
-    }
+    id 'dev.lukebemish.conventions' version '0.1.10'
+    id 'dev.lukebemish.multisource' version '0.1.8'
 }
 
 rootProject.name = "biomesquisher"
 
-include 'common', 'fabric', 'neoforge'
-
-buildCache {
-    if (providers.gradleProperty('buildCacheUrl').orNull) {
-        remote(HttpBuildCache) {
-            url = providers.gradleProperty('buildCacheUrl').orNull
-            credentials {
-                username = providers.gradleProperty('buildCacheUser').orNull
-                password = providers.gradleProperty('buildCachePassword').orNull
-            }
-            if (providers.gradleProperty('buildCachePush').orNull) {
-                push = true
-            } else {
-                push = false
-            }
+multisource.of(':') {
+    configureEach {
+        minecraft.add project.libs.minecraft
+        mappings.add loom.layered() {
+            officialMojangMappings()
+            parchment(project.dependencies.variantOf(project.libs.parchment) {
+                artifactType('zip')
+            })
         }
-    } else if (System.getenv('BUILD_CACHE_URL')) {
-        remote(HttpBuildCache) {
-            url = System.getenv('BUILD_CACHE_URL')
-            credentials {
-                username = System.getenv('BUILD_CACHE_USER')
-                password = System.getenv('BUILD_CACHE_PASSWORD')
-            }
-            if (System.getenv('BUILD_CACHE_PUSH') || System.getenv('CI')) {
-                push = true
-            } else {
-                push = false
-            }
+    }
+    common('main', []) {}
+    fabric('fabric', ['main']) {}
+    neoforge('neoforge', ['main']) {
+        neoForge.add project.libs.neoforge
+    }
+    common('testcommon', []) {}
+    fabric('testfabric', ['testcommon']) {}
+    neoforge('testneoforge', ['testcommon']) {
+        neoForge.add project.libs.neoforge
+    }
+    repositories {
+        // Forge repo doesn't mirror central right...
+        it.removeIf { it.name == 'Forge' }
+        maven {
+            name = 'ParchmentMC'
+            url = 'https://maven.parchmentmc.org'
+        }
+        maven {
+            name = "Luke's Maven"
+            url = 'https://maven.lukebemish.dev/releases'
         }
     }
 }

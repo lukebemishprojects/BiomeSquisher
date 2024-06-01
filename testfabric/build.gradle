@@ -1,0 +1,32 @@
+configurations {
+    normalRuntimeModClasses
+    runsImplementation.extendsFrom normalRuntimeModClasses
+}
+
+loom {
+    runs {
+        gametest {
+            inherit server
+            name "Game Test"
+            vmArg "-Dfabric-api.gametest"
+        }
+
+        configureEach {
+            runDir "runs/${it.name}"
+        }
+    }
+
+    mods.register("${project.mod_id}tests") {
+        configuration configurations.normalRuntimeModClasses
+    }
+}
+
+dependencies {
+    normalRuntimeModClasses(project(path: ':', configuration: 'fabricRuntimeModClasses')) {
+        transitive = false
+    }
+}
+
+tasks.named('check') {
+    dependsOn tasks.named('runGametest')
+}

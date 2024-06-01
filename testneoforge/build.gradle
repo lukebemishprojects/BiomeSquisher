@@ -1,0 +1,36 @@
+configurations {
+    normalRuntimeModClasses
+    runsImplementation.extendsFrom normalRuntimeModClasses
+}
+
+loom {
+    runs {
+        gametest {
+            inherit server
+            forgeTemplate('server')
+            name "Game Test"
+            vmArg "-Dneoforge.enableGameTest=true"
+            vmArg "-Dneoforge.gameTestServer=true"
+            vmArg "-Dneoforge.enabledGameTestNamespaces=${project.mod_id},${project.mod_id}tests"
+        }
+
+        configureEach {
+            runDir "runs/${it.name}"
+        }
+    }
+
+    mods.register("${project.mod_id}tests") {
+        configuration configurations.normalRuntimeModClasses
+    }
+}
+
+dependencies {
+    forgeRuntimeLibrary libs.pngj
+    normalRuntimeModClasses(project(path: ':', configuration: 'neoforgeRuntimeModClasses')) {
+        transitive = false
+    }
+}
+
+tasks.named('check') {
+    dependsOn tasks.named('runGametest')
+}

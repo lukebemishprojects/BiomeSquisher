@@ -1,177 +1,371 @@
+import me.modmuss50.mpp.ReleaseType
+
 plugins {
-    alias libs.plugins.mdg.plugin
-    alias libs.plugins.architectury.loom apply false
+    id 'maven-publish'
+    id 'java-library'
+    id 'signing'
     alias libs.plugins.managedversioning
-    alias libs.plugins.nexuspublish
+    alias libs.plugins.modsdotgroovy
+    alias libs.plugins.modpublish
 }
 
 managedVersioning {
     versionFile.set rootProject.file('version.properties')
     metadataVersion.set libs.versions.minecraft
-    if (rootProject.releasetype != 'release') {
-        suffixParts.add "${rootProject.releasetype}"
-    }
-    if (System.getenv('PR_NUMBER')) {
-        suffixParts.add "pr${System.getenv('PR_NUMBER')}"
-    } else if (System.getenv('SNAPSHOT_MAVEN_URL')) {
-        suffixParts.add 'SNAPSHOT'
+    versionPRs()
+    versionSnapshots()
+
+    gitHubActions {
+        release {
+            prettyName.set 'Release'
+            workflowDispatch.set(true)
+            gradleJob {
+                name.set 'build'
+                javaVersion.set '21'
+                buildCache()
+                step {
+                    setupGitUser()
+                }
+                readOnly.set false
+                gradlew 'Tag Release', 'tagRelease'
+                gradlew 'Build', 'build'
+                step {
+                    run.set 'git push && git push --tags'
+                }
+                recordVersion 'Record Version', 'version'
+                dependencySubmission()
+                sign()
+                mavenCentral()
+                modPublishing()
+            }
+            gradleJob {
+                name.set 'publishMod'
+                javaVersion.set '21'
+                buildCache()
+                needs.add('build')
+                tag.set('${{needs.build.outputs.version}}')
+                gradlew 'Publish', 'publishMods'
+                sign()
+                mavenCentral()
+                modPublishing()
+            }
+            gradleJob {
+                name.set 'publishCentral'
+                javaVersion.set '21'
+                buildCache()
+                needs.add('build')
+                tag.set('${{needs.build.outputs.version}}')
+                gradlew 'Publish', 'publish', 'closeAndReleaseSonatypeStagingRepository'
+                sign()
+                mavenCentral()
+                modPublishing()
+            }
+        }
+        build_pr {
+            prettyName.set 'Build PR'
+            pullRequest.set(true)
+            gradleJob {
+                name.set 'build'
+                javaVersion.set '21'
+                gradlew 'Assemble', 'assemble'
+                gradlew 'Test', 'check', '--continue'
+                upload('junit-test-results', ['*/runs/gametest/results/junit.xml']) {
+                    runsOnError.set true
+                    requiredSteps.add 'assemble'
+                    with.put('retention-days', '1')
+                }
+                gradlew 'Publish', 'publish'
+                pullRequestArtifact()
+            }
+        }
+        publish_pr {
+            prettyName.set 'Publish PR'
+            publishPullRequestAction(
+                'github',
+                "${project.group.replace('.', '/')}/${project.name}",
+                'Build PR'
+            )
+        }
+        snapshot {
+            prettyName.set 'Snapshot'
+            workflowDispatch.set(true)
+            onBranches.add '1.*'
+            gradleJob {
+                name.set 'build'
+                javaVersion.set '21'
+                gradlew 'Assemble', 'assemble'
+                gradlew 'Test', 'check', '--continue'
+                upload('junit-test-results', ['*/runs/gametest/results/junit.xml']) {
+                    runsOnError.set true
+                    requiredSteps.add 'assemble'
+                    with.put('retention-days', '1')
+                }
+                gradlew 'Publish', 'publish'
+                mavenSnapshot('github')
+            }
+        }
+        report {
+            prettyName.set 'Report Test Results'
+            completedWorkflows.set(['Build PR', 'Snapshot'])
+            job {
+                name.set 'checks'
+                permissions.put('contents', 'read')
+                permissions.put('actions', 'read')
+                permissions.put('checks', 'write')
+                step {
+                    name.set 'Checkout'
+                    uses.set 'actions/checkout@v4'
+                    with.put 'ref', '${{ github.event.workflow_run.head_commit.id }}'
+                    with.put 'repository', '${{ github.event.workflow_run.head_repository.full_name }}'
+                }
+                step {
+                    name.set 'Download Test Report'
+                    uses.set 'actions/download-artifact@v4'
+                    with.put 'name', 'junit-test-results'
+                    with.put 'github-token', '${{ github.token }}'
+                    with.put 'run-id', '${{ github.event.workflow_run.id }}'
+                }
+                step {
+                    name.set 'JUnit Test Report'
+                    uses.set 'dorny/test-reporter@v1'
+                    with.put 'name', 'Gametests'
+                    with.put 'path', '*/runs/gametest/results/junit.xml'
+                    with.put 'reporter', 'java-junit'
+                    with.put 'fail-on-empty', 'true'
+                    with.put 'list-tests', 'failed'
+                }
+            }
+        }
     }
 }
 
 managedVersioning.apply()
 
-println "Building: ${rootProject.version}"
-
-subprojects { p ->
-    apply plugin: 'java-library'
-    apply plugin: 'maven-publish'
-    apply plugin: 'signing'
-    apply plugin: 'dev.architectury.loom'
-
-    group = rootProject.group
-    version = rootProject.version
-    base.archivesName = "${rootProject.name}-${p.name.toLowerCase(Locale.ROOT)}-${libs.versions.minecraft.get()}"
-
-    java.toolchain.languageVersion = JavaLanguageVersion.of(17)
-    java.withSourcesJar()
-    java.withJavadocJar()
-
-    javadoc {
-        include "**/api/**"
-    }
-
-    jar {
-        manifest {
-            attributes([
-                'Specification-Title'     : rootProject.modname,
-                'Specification-Vendor'    : rootProject.modauthor,
-                'Specification-Version'   : rootProject.version,
-                'Implementation-Title'    : "$modname - ${project.name}",
-                'Implementation-Version'  : rootProject.version,
-                'Implementation-Vendor'   : rootProject.modauthor,
-                'Implementation-Commit-Time': managedVersioning.timestamp.get(),
-                'Implementation-Commit': managedVersioning.hash.get(),
-                'Build-On-Minecraft'      : libs.versions.minecraft.get(),
-            ])
-        }
-
-        from("LICENSE") {
-            rename { "${it}-${rootProject.name}"}
-        }
-    }
-
-    repositories {
-        mavenCentral()
-        maven {
-            name = 'ParchmentMC'
-            url = 'https://maven.parchmentmc.org'
-        }
-        maven {
-            name = 'NeoForged'
-            url = 'https://maven.neoforged.net/releases'
-        }
-    }
-
-    dependencies {
-        minecraft libs.minecraft
-        mappings loom.layered() {
-            officialMojangMappings()
-            parchment("org.parchmentmc.data:parchment-${libs.versions.parchment.minecraft.get()}:${libs.versions.parchment.mappings.get()}@zip")
-        }
-
-        compileOnly libs.jetbrains.annotations
-        testCompileOnly libs.jetbrains.annotations
-        implementation libs.pngj
-        compileOnly libs.autoservice
-        annotationProcessor libs.autoservice
-        testCompileOnly libs.autoservice
-        testAnnotationProcessor libs.autoservice
-    }
-
-    publishing {
-        publications {
-            mavenJava(MavenPublication) {
-                from components.java
-                artifactId base.archivesName.get()
-
-                pom {
-                    name = "${rootProject.modname} - ${project.name}"
-                    packaging = 'jar'
-                    description = 'Modding library for the game "Minecraft" which allows for injection of new biomes into the biome parameter space by "squishing" existing biomes'
-                    url = 'https://github.com/lukebemishprojects/BiomeSquisher'
-                    inceptionYear = '2023'
-
-                    licenses {
-                        license {
-                            name = '3-Clause BSD License'
-                            url = 'https://opensource.org/license/bsd-3-clause/'
-                        }
-                    }
-                    developers {
-                        developer {
-                            id = 'lukebemish'
-                            name = 'Luke Bemish'
-                            email = 'lukebemish@lukebemish.dev'
-                            url = 'https://github.com/lukebemish/'
-                        }
-                    }
-                    scm {
-                        connection='scm:git:git://github.com/lukebemishprojects/BiomeSquisher.git'
-                        developerConnection='scm:git:ssh://github.com/lukebemishprojects/BiomeSquisher.git'
-                        url='https://github.com/lukebemishprojects/BiomeSquisher'
-                    }
-                }
-            }
-        }
-        repositories {
-            if (System.getenv('PR_NUMBER')) {
-                maven {
-                    name = 'LocalMaven'
-                    url = rootProject.layout.buildDirectory.dir('repo')
-                }
-            } else if (System.getenv('SNAPSHOT_MAVEN_URL')) {
-                maven {
-                    name = 'PersonalMaven'
-                    url = uri(System.getenv('SNAPSHOT_MAVEN_URL'))
-                    credentials {
-                        username = System.getenv('MAVEN_USER')
-                        password = System.getenv('MAVEN_PASSWORD')
-                    }
-                }
-            }
-        }
-    }
-
-    if (System.getenv('GPG_KEY')) {
-        signing {
-            final signingKey = System.getenv('GPG_KEY')
-            final signingPassword = System.getenv('GPG_PASSWORD')
-            useInMemoryPgpKeys(signingKey, signingPassword)
-            sign publishing.publications.mavenJava
-        }
-    }
-}
-
-if (System.getenv('SONATYPE_USER')) {
-    nexusPublishing {
-        repositories {
-            sonatype {
-                username.set(System.getenv('SONATYPE_USER') ?: '')
-                password.set(System.getenv('SONATYPE_PASSWORD') ?: '')
-                nexusUrl.set(uri("https://s01.oss.sonatype.org/service/local/"))
-            }
-        }
-    }
-}
+println "Building: $version"
 
 modsDotGroovy {
-    dslVersion = libs.versions.mdg.dsl.get()
-    platform 'multiloader'
-    multiloader {
-        common = project(':common')
-        forge = [project(':neoforge')]
-        fabric = [project(':fabric')]
-        quilt = []
+    multiplatform.expose()
+    gather {
+        projectProperty('mod_id')
+        projectProperty('mod_name')
+        projectProperty('mod_author')
+        projectProperty('mod_description')
     }
-    source.set project(':common').sourceSets.main
+}
+
+sourceSets.testcommon.modsDotGroovy {
+    enable()
+    multiplatform.expose()
+    gather {
+        projectProperty('mod_id')
+        projectProperty('mod_name')
+        projectProperty('mod_author')
+        projectProperty('mod_description')
+    }
+}
+
+sourceSets.neoforge.modsDotGroovy {
+    platform = org.groovymc.modsdotgroovy.types.core.Platform.NEOFORGE
+    inferGather.set false
+    multiplatform.from(':', 'main')
+    gather {
+        minecraftVersion = libs.versions.minecraft.get()
+        platformVersion = libs.versions.neoforge.get()
+    }
+    enable()
+}
+
+sourceSets.fabric.modsDotGroovy {
+    platform = org.groovymc.modsdotgroovy.types.core.Platform.FABRIC
+    inferGather.set false
+    multiplatform.from(':', 'main')
+    gather {
+        minecraftVersion = libs.versions.minecraft.get()
+        platformVersion = libs.versions.fabric.loader.get()
+    }
+    enable()
+}
+
+sourceSets.testneoforge.modsDotGroovy {
+    platform = org.groovymc.modsdotgroovy.types.core.Platform.NEOFORGE
+    inferGather.set false
+    multiplatform.from(':', 'testcommon')
+    gather {
+        minecraftVersion = libs.versions.minecraft.get()
+        platformVersion = libs.versions.neoforge.get()
+    }
+    enable()
+}
+
+sourceSets.testfabric.modsDotGroovy {
+    platform = org.groovymc.modsdotgroovy.types.core.Platform.FABRIC
+    inferGather.set false
+    multiplatform.from(':', 'testcommon')
+    gather {
+        minecraftVersion = libs.versions.minecraft.get()
+        platformVersion = libs.versions.fabric.loader.get()
+    }
+    enable()
+}
+
+dependencies {
+    compileOnly cLibs.bundles.compileonly
+    annotationProcessor cLibs.bundles.annotationprocessor
+    compileOnly libs.fabric.mixin
+    compileOnly libs.mixinextras.common
+    implementation libs.pngj
+
+    fabricCompileOnly cLibs.bundles.compileonly
+    fabricAnnotationProcessor cLibs.bundles.annotationprocessor
+
+    modFabricImplementation libs.fabric.loader
+    modFabricImplementation libs.fabric.api
+    fabricImplementation libs.pngj
+
+    modTestfabricImplementation libs.fabric.loader
+    modTestfabricImplementation libs.fabric.api
+    testfabricAnnotationProcessor cLibs.bundles.annotationprocessor
+    testfabricImplementation libs.pngj
+
+    neoforgeCompileOnly cLibs.bundles.compileonly
+    neoforgeAnnotationProcessor cLibs.bundles.annotationprocessor
+    neoforgeImplementation libs.pngj
+
+    testneoforgeAnnotationProcessor cLibs.bundles.annotationprocessor
+    testneoforgeImplementation libs.pngj
+
+    fabricInclude libs.pngj
+    neoforgeInclude libs.pngj
+
+    testcommonCompileOnly sourceSets.main.output
+    testfabricCompileOnly sourceSets.fabric.output
+    testneoforgeCompileOnly sourceSets.neoforge.output
+}
+
+configurations {
+    testfabricCompileClasspath.extendsFrom fabricCompileClasspath
+    testneoforgeCompileClasspath.extendsFrom neoforgeCompileClasspath
+    testcommonCompileClasspath.extendsFrom compileClasspath
+}
+
+java.toolchain.languageVersion = JavaLanguageVersion.of(21)
+
+java {
+    withSourcesJar()
+    withJavadocJar()
+    registerFeature("neoforge") {
+        usingSourceSet sourceSets.neoforge
+        capability(project.group as String, project.name, project.version as String)
+        capability(project.group as String, "$project.name-neoforge", project.version as String)
+        withSourcesJar()
+        withJavadocJar()
+    }
+    registerFeature("fabric") {
+        usingSourceSet sourceSets.fabric
+        capability(project.group as String, project.name, project.version as String)
+        capability(project.group as String, "$project.name-fabric", project.version as String)
+        withSourcesJar()
+        withJavadocJar()
+    }
+}
+
+['sourcesJar', 'fabricSourcesJar', 'neoforgeSourcesJar'].each {
+    tasks.named(it, Jar) {
+        from(files("LICENSE")) {
+            rename { "${it}_${project.name}" }
+        }
+    }
+}
+
+['jar', 'fabricJar', 'neoforgeJar'].each {
+    tasks.named(it, Jar) {
+        from(files("LICENSE")) {
+            rename { "${it}_${project.name}" }
+        }
+
+        manifest {
+            attributes([
+                'Specification-Title'     : mod_name,
+                'Specification-Vendor'    : mod_author,
+                'Specification-Version'   : project.version,
+                'Implementation-Title'    : "$mod_name - ${project.name}",
+                'Implementation-Version'  : project.version,
+                'Implementation-Vendor'   : mod_author,
+                'Built-On-Minecraft'      : libs.versions.minecraft.get(),
+                'Implementation-Commit-Time': managedVersioning.timestamp.get(),
+                'Implementation-Commit': managedVersioning.hash.get()
+            ])
+        }
+    }
+}
+
+['javadoc', 'fabricJavadoc', 'neoforgeJavadoc'].each {
+    tasks.named(it, Javadoc) {
+        include("**/api/**")
+    }
+}
+
+managedVersioning.publishing.mavenCentral()
+managedVersioning.publishing.mavenPullRequest(publishing)
+managedVersioning.publishing.mavenSnapshot(publishing)
+
+publishing {
+    publications {
+        mavenJava(MavenPublication) {
+            from components.java
+            managedVersioning.publishing.sign(signing, it)
+            managedVersioning.publishing.pom(it, github_repo, license)
+            pom {
+                name = mod_name
+                description = project.mod_description
+            }
+        }
+    }
+}
+
+def releaseType = ReleaseType.values().find { it.name() == project.release_type.toUpperCase(Locale.ROOT) } ?: ReleaseType.STABLE
+
+publishMods {
+    changelog = ''
+    version = "${project.version}"
+    type = releaseType
+    dryRun = providers.environmentVariable("MODRINTH_KEY").getOrNull() == null || providers.environmentVariable("CURSEFORGE_KEY").getOrNull() == null
+
+    curseforge('curseforgeFabric') {
+        file = tasks.remapFabricJar.archiveFile
+        displayName = "${project.mod_name} [Fabric/Quilt] v${project.version}"
+        projectId = project.curseforge_id
+        accessToken = System.getenv('CURSEFORGE_KEY')
+        modLoaders = ['fabric', 'quilt']
+        minecraftVersions = [libs.versions.minecraft.get()]
+        requires('fabric-api')
+    }
+
+    curseforge('curseforgeNeoforge') {
+        file = tasks.remapNeoforgeJar.archiveFile
+        displayName = "${project.mod_name} [NeoForge] v${project.version}"
+        projectId = project.curseforge_id
+        accessToken = System.getenv('CURSEFORGE_KEY')
+        modLoaders = ['neoforge']
+        minecraftVersions = [libs.versions.minecraft.get()]
+    }
+
+    modrinth('modrinthFabric') {
+        file = tasks.remapFabricJar.archiveFile
+        displayName = "${project.mod_name} [Fabric/Quilt] v${project.version}"
+        projectId = project.modrinth_id
+        accessToken = System.getenv('MODRINTH_KEY')
+        minecraftVersions = [libs.versions.minecraft.get()]
+        modLoaders = ['fabric', 'quilt']
+        requires('fabric-api')
+    }
+
+    modrinth('modrinthNeoforge') {
+        file = tasks.remapNeoforgeJar.archiveFile
+        displayName = "${project.mod_name} [NeoForge] v${project.version}"
+        projectId = project.modrinth_id
+        accessToken = System.getenv('MODRINTH_KEY')
+        minecraftVersions = [libs.versions.minecraft.get()]
+        modLoaders = ['neoforge']
+    }
 }

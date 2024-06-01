@@ -1,57 +1,243 @@
-name: Release
-concurrency: ci-${{ github.ref }}
-on:
-    workflow_dispatch:
-jobs:
-    build:
-        runs-on: ubuntu-22.04
-        steps:
-            - name: Setup Java
-              run: |
-                echo "JAVA_HOME=$JAVA_HOME_17_X64" >> "$GITHUB_ENV"
-            - uses: actions/checkout@v4
-              with:
-                fetch-depth: 0
-            - uses: fregante/setup-git-user@v2
-            - uses: actions/cache@v3
-              with:
-                path: |
-                    **/.gradle/loom-cache
-                key: ${{ runner.os }}-gradle-${{ hashFiles('**/libs.versions.*', '**/*.gradle*', '**/gradle-wrapper.properties') }}
-                restore-keys: ${{ runner.os }}-gradle-
-            - uses: gradle/gradle-build-action@v2
-              name: Setup Gradle
-              with:
-                  gradle-home-cache-cleanup: true
-                  gradle-home-cache-excludes: |
-                      caches/build-cache-1
-            - name: Tag Release
-              run: |
-                  ./gradlew tagRelease
-              env:
-                  BUILD_CACHE_URL: ${{ secrets.BUILD_CACHE_URL }}
-                  BUILD_CACHE_USER: ${{ secrets.BUILD_CACHE_USER }}
-                  BUILD_CACHE_PASSWORD: ${{ secrets.BUILD_CACHE_PASSWORD }}
-            - name: Build
-              run: |
-                  ./gradlew build
-              env:
-                  BUILD_CACHE_URL: ${{ secrets.BUILD_CACHE_URL }}
-                  BUILD_CACHE_USER: ${{ secrets.BUILD_CACHE_USER }}
-                  BUILD_CACHE_PASSWORD: ${{ secrets.BUILD_CACHE_PASSWORD }}
-            - name: Publish
-              run: |
-                  ./gradlew publish curseforge modrinth closeAndReleaseSonatypeStagingRepository
-              env:
-                SONATYPE_USER: ${{ secrets.SONATYPE_USER }}
-                SONATYPE_PASSWORD: ${{ secrets.SONATYPE_PASSWORD }}
-                GPG_KEY: ${{ secrets.GPG_KEY }}
-                GPG_PASSWORD: ${{ secrets.GPG_PASSWORD }}
-                CURSEFORGE_KEY: ${{ secrets.CURSEFORGE_KEY }}
-                MODRINTH_KEY: ${{ secrets.MODRINTH_KEY }}
-                BUILD_CACHE_URL: ${{ secrets.BUILD_CACHE_URL }}
-                BUILD_CACHE_USER: ${{ secrets.BUILD_CACHE_USER }}
-                BUILD_CACHE_PASSWORD: ${{ secrets.BUILD_CACHE_PASSWORD }}
-            - run: |
-                  git push
-                  git push --tags
+{
+    "jobs": {
+        "build": {
+            "outputs": {
+                "version": "${{ steps.record_version_capture_version.outputs.version }}"
+            },
+            "runs-on": "ubuntu-22.04",
+            "permissions": {
+                "contents": "write"
+            },
+            "steps": [
+                {
+                    "name": "Setup Java",
+                    "run": "echo \"JAVA_HOME=$JAVA_HOME_21_X64\" >> \"$GITHUB_ENV\""
+                },
+                {
+                    "with": {
+                        "fetch-depth": "0"
+                    },
+                    "name": "Checkout",
+                    "uses": "actions/checkout@v4"
+                },
+                {
+                    "name": "Validate Gradle Wrapper",
+                    "uses": "gradle/actions/wrapper-validation@v3"
+                },
+                {
+                    "with": {
+                        "path": "**/.gradle/loom-cache\n**/.gradle/quilt-loom-cache",
+                        "key": "${{ runner.os }}-gradle-${{ hashFiles('**/libs.versions.*', '**/*.gradle*', '**/gradle-wrapper.properties') }}",
+                        "restore-keys": "${{ runner.os }}-gradle-"
+                    },
+                    "name": "Cache",
+                    "uses": "actions/cache@v4"
+                },
+                {
+                    "with": {
+                        "gradle-home-cache-cleanup": true
+                    },
+                    "name": "Setup Gradle",
+                    "uses": "gradle/actions/setup-gradle@v3"
+                },
+                {
+                    "uses": "fregante/setup-git-user@v2"
+                },
+                {
+                    "name": "Tag Release",
+                    "run": "./gradlew tagRelease",
+                    "id": "tag_release",
+                    "env": {
+                        "BUILD_CACHE_PASSWORD": "${{ secrets.BUILD_CACHE_PASSWORD }}",
+                        "BUILD_CACHE_USER": "${{ secrets.BUILD_CACHE_USER }}",
+                        "BUILD_CACHE_URL": "${{ secrets.BUILD_CACHE_URL }}",
+                        "GPG_KEY": "${{ secrets.GPG_KEY }}",
+                        "GPG_PASSWORD": "${{ secrets.GPG_PASSWORD }}",
+                        "SONATYPE_PASSWORD": "${{ secrets.SONATYPE_PASSWORD }}",
+                        "SONATYPE_USER": "${{ secrets.SONATYPE_USER }}",
+                        "CURSEFORGE_KEY": "${{ secrets.CURSEFORGE_KEY }}",
+                        "MODRINTH_KEY": "${{ secrets.MODRINTH_KEY }}"
+                    }
+                },
+                {
+                    "name": "Build",
+                    "run": "./gradlew build",
+                    "id": "build",
+                    "env": {
+                        "BUILD_CACHE_PASSWORD": "${{ secrets.BUILD_CACHE_PASSWORD }}",
+                        "BUILD_CACHE_USER": "${{ secrets.BUILD_CACHE_USER }}",
+                        "BUILD_CACHE_URL": "${{ secrets.BUILD_CACHE_URL }}",
+                        "GPG_KEY": "${{ secrets.GPG_KEY }}",
+                        "GPG_PASSWORD": "${{ secrets.GPG_PASSWORD }}",
+                        "SONATYPE_PASSWORD": "${{ secrets.SONATYPE_PASSWORD }}",
+                        "SONATYPE_USER": "${{ secrets.SONATYPE_USER }}",
+                        "CURSEFORGE_KEY": "${{ secrets.CURSEFORGE_KEY }}",
+                        "MODRINTH_KEY": "${{ secrets.MODRINTH_KEY }}"
+                    }
+                },
+                {
+                    "run": "git push && git push --tags"
+                },
+                {
+                    "name": "Record Version",
+                    "run": "./gradlew recordVersion",
+                    "id": "record_version",
+                    "env": {
+                        "BUILD_CACHE_PASSWORD": "${{ secrets.BUILD_CACHE_PASSWORD }}",
+                        "BUILD_CACHE_USER": "${{ secrets.BUILD_CACHE_USER }}",
+                        "BUILD_CACHE_URL": "${{ secrets.BUILD_CACHE_URL }}",
+                        "GPG_KEY": "${{ secrets.GPG_KEY }}",
+                        "GPG_PASSWORD": "${{ secrets.GPG_PASSWORD }}",
+                        "SONATYPE_PASSWORD": "${{ secrets.SONATYPE_PASSWORD }}",
+                        "SONATYPE_USER": "${{ secrets.SONATYPE_USER }}",
+                        "CURSEFORGE_KEY": "${{ secrets.CURSEFORGE_KEY }}",
+                        "MODRINTH_KEY": "${{ secrets.MODRINTH_KEY }}"
+                    }
+                },
+                {
+                    "name": "Capture Recorded Version",
+                    "run": "echo version=$(cat build/recordVersion.txt) >> \"$GITHUB_OUTPUT\"",
+                    "id": "record_version_capture_version"
+                },
+                {
+                    "name": "Submit Dependencies",
+                    "uses": "gradle/actions/dependency-submission@v3",
+                    "env": {
+                        "BUILD_CACHE_PASSWORD": "${{ secrets.BUILD_CACHE_PASSWORD }}",
+                        "BUILD_CACHE_USER": "${{ secrets.BUILD_CACHE_USER }}",
+                        "BUILD_CACHE_URL": "${{ secrets.BUILD_CACHE_URL }}",
+                        "GPG_KEY": "${{ secrets.GPG_KEY }}",
+                        "GPG_PASSWORD": "${{ secrets.GPG_PASSWORD }}",
+                        "SONATYPE_PASSWORD": "${{ secrets.SONATYPE_PASSWORD }}",
+                        "SONATYPE_USER": "${{ secrets.SONATYPE_USER }}",
+                        "CURSEFORGE_KEY": "${{ secrets.CURSEFORGE_KEY }}",
+                        "MODRINTH_KEY": "${{ secrets.MODRINTH_KEY }}"
+                    }
+                }
+            ]
+        },
+        "publishCentral": {
+            "needs": [
+                "build"
+            ],
+            "runs-on": "ubuntu-22.04",
+            "steps": [
+                {
+                    "name": "Setup Java",
+                    "run": "echo \"JAVA_HOME=$JAVA_HOME_21_X64\" >> \"$GITHUB_ENV\""
+                },
+                {
+                    "with": {
+                        "fetch-depth": "0",
+                        "ref": "refs/tags/${{needs.build.outputs.version}}",
+                        "persist-credentials": "false"
+                    },
+                    "name": "Checkout",
+                    "uses": "actions/checkout@v4"
+                },
+                {
+                    "name": "Validate Gradle Wrapper",
+                    "uses": "gradle/actions/wrapper-validation@v3"
+                },
+                {
+                    "with": {
+                        "path": "**/.gradle/loom-cache\n**/.gradle/quilt-loom-cache",
+                        "key": "${{ runner.os }}-gradle-${{ hashFiles('**/libs.versions.*', '**/*.gradle*', '**/gradle-wrapper.properties') }}",
+                        "restore-keys": "${{ runner.os }}-gradle-"
+                    },
+                    "name": "Cache",
+                    "uses": "actions/cache/restore@v4"
+                },
+                {
+                    "with": {
+                        "cache-read-only": true,
+                        "gradle-home-cache-cleanup": true
+                    },
+                    "name": "Setup Gradle",
+                    "uses": "gradle/actions/setup-gradle@v3"
+                },
+                {
+                    "name": "Publish",
+                    "run": "./gradlew publish closeAndReleaseSonatypeStagingRepository",
+                    "id": "publish",
+                    "env": {
+                        "BUILD_CACHE_PASSWORD": "${{ secrets.BUILD_CACHE_PASSWORD }}",
+                        "BUILD_CACHE_USER": "${{ secrets.BUILD_CACHE_USER }}",
+                        "BUILD_CACHE_URL": "${{ secrets.BUILD_CACHE_URL }}",
+                        "GPG_KEY": "${{ secrets.GPG_KEY }}",
+                        "GPG_PASSWORD": "${{ secrets.GPG_PASSWORD }}",
+                        "SONATYPE_PASSWORD": "${{ secrets.SONATYPE_PASSWORD }}",
+                        "SONATYPE_USER": "${{ secrets.SONATYPE_USER }}",
+                        "CURSEFORGE_KEY": "${{ secrets.CURSEFORGE_KEY }}",
+                        "MODRINTH_KEY": "${{ secrets.MODRINTH_KEY }}"
+                    }
+                }
+            ]
+        },
+        "publishMod": {
+            "needs": [
+                "build"
+            ],
+            "runs-on": "ubuntu-22.04",
+            "steps": [
+                {
+                    "name": "Setup Java",
+                    "run": "echo \"JAVA_HOME=$JAVA_HOME_21_X64\" >> \"$GITHUB_ENV\""
+                },
+                {
+                    "with": {
+                        "fetch-depth": "0",
+                        "ref": "refs/tags/${{needs.build.outputs.version}}",
+                        "persist-credentials": "false"
+                    },
+                    "name": "Checkout",
+                    "uses": "actions/checkout@v4"
+                },
+                {
+                    "name": "Validate Gradle Wrapper",
+                    "uses": "gradle/actions/wrapper-validation@v3"
+                },
+                {
+                    "with": {
+                        "path": "**/.gradle/loom-cache\n**/.gradle/quilt-loom-cache",
+                        "key": "${{ runner.os }}-gradle-${{ hashFiles('**/libs.versions.*', '**/*.gradle*', '**/gradle-wrapper.properties') }}",
+                        "restore-keys": "${{ runner.os }}-gradle-"
+                    },
+                    "name": "Cache",
+                    "uses": "actions/cache/restore@v4"
+                },
+                {
+                    "with": {
+                        "cache-read-only": true,
+                        "gradle-home-cache-cleanup": true
+                    },
+                    "name": "Setup Gradle",
+                    "uses": "gradle/actions/setup-gradle@v3"
+                },
+                {
+                    "name": "Publish",
+                    "run": "./gradlew publishMods",
+                    "id": "publish",
+                    "env": {
+                        "BUILD_CACHE_PASSWORD": "${{ secrets.BUILD_CACHE_PASSWORD }}",
+                        "BUILD_CACHE_USER": "${{ secrets.BUILD_CACHE_USER }}",
+                        "BUILD_CACHE_URL": "${{ secrets.BUILD_CACHE_URL }}",
+                        "GPG_KEY": "${{ secrets.GPG_KEY }}",
+                        "GPG_PASSWORD": "${{ secrets.GPG_PASSWORD }}",
+                        "SONATYPE_PASSWORD": "${{ secrets.SONATYPE_PASSWORD }}",
+                        "SONATYPE_USER": "${{ secrets.SONATYPE_USER }}",
+                        "CURSEFORGE_KEY": "${{ secrets.CURSEFORGE_KEY }}",
+                        "MODRINTH_KEY": "${{ secrets.MODRINTH_KEY }}"
+                    }
+                }
+            ]
+        }
+    },
+    "name": "Release",
+    "concurrency": "ci-${{ github.ref }}",
+    "on": {
+        "workflow_dispatch": {
+            
+        }
+    }
+}

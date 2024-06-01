@@ -1,20 +1,55 @@
-name: Report Test Results
-on:
-    workflow_run:
-        workflows: [test, snapshot]
-        types: [completed]
-
-permissions:
-    contents: read
-    actions: read
-    checks: write
-jobs:
-    checks:
-        runs-on: ubuntu-latest
-        steps:
-            - uses: dorny/test-reporter@v1
-              with:
-                  artifact: junit-test-results
-                  name: Test Results
-                  path: '**/*.xml'
-                  reporter: java-junit
+{
+    "jobs": {
+        "checks": {
+            "runs-on": "ubuntu-22.04",
+            "permissions": {
+                "contents": "read",
+                "actions": "read",
+                "checks": "write"
+            },
+            "steps": [
+                {
+                    "with": {
+                        "ref": "${{ github.event.workflow_run.head_commit.id }}",
+                        "repository": "${{ github.event.workflow_run.head_repository.full_name }}"
+                    },
+                    "name": "Checkout",
+                    "uses": "actions/checkout@v4"
+                },
+                {
+                    "with": {
+                        "name": "junit-test-results",
+                        "github-token": "${{ github.token }}",
+                        "run-id": "${{ github.event.workflow_run.id }}"
+                    },
+                    "name": "Download Test Report",
+                    "uses": "actions/download-artifact@v4"
+                },
+                {
+                    "with": {
+                        "name": "Gametests",
+                        "path": "*/runs/gametest/results/junit.xml",
+                        "reporter": "java-junit",
+                        "fail-on-empty": "true",
+                        "list-tests": "failed"
+                    },
+                    "name": "JUnit Test Report",
+                    "uses": "dorny/test-reporter@v1"
+                }
+            ]
+        }
+    },
+    "name": "Report Test Results",
+    "concurrency": "ci-${{ github.ref }}",
+    "on": {
+        "workflow_run": {
+            "types": [
+                "completed"
+            ],
+            "workflows": [
+                "Build PR",
+                "Snapshot"
+            ]
+        }
+    }
+}
