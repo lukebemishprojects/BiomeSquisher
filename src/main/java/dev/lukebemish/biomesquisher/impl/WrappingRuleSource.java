@@ -21,7 +21,7 @@ import java.util.stream.Stream;
 
 @Extend(targetClass = SurfaceRules.RuleSource.class, unsafe = false)
 @Expose
-interface WrappingRuleSource extends SurfaceRules.RuleSource {
+public interface WrappingRuleSource extends SurfaceRules.RuleSource {
     KeyDispatchDataCodec<WrappingRuleSource> CODEC = KeyDispatchDataCodec.of(new MapCodec<>() {
         static final MapCodec<WrappingRuleSource> DELEGATE = RecordCodecBuilder.mapCodec(i -> i.group(
             SurfaceRules.RuleSource.CODEC.fieldOf("delegate").forGetter(WrappingRuleSource::delegate)
