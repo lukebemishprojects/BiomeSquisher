@@ -4,6 +4,7 @@ import com.mojang.serialization.MapCodec;
 import dev.lukebemish.biomesquisher.surface.AfterModifier;
 import dev.lukebemish.biomesquisher.surface.AllPredicate;
 import dev.lukebemish.biomesquisher.surface.AlwaysPredicate;
+import dev.lukebemish.biomesquisher.surface.ManyFinder;
 import dev.lukebemish.biomesquisher.surface.AndPredicate;
 import dev.lukebemish.biomesquisher.surface.AnyPredicate;
 import dev.lukebemish.biomesquisher.surface.AppendModifier;
@@ -52,6 +53,7 @@ public final class SurfaceModifierBootstrap {
 
     public static void finders(BiConsumer<String, MapCodec<? extends RuleFinder>> consumer) {
         consumer.accept("chain", ChainFinder.CODEC);
+        consumer.accept("many", ManyFinder.CODEC);
         consumer.accept("check", CheckFinder.CODEC);
         consumer.accept("matching", MatchingFinder.CODEC);
         consumer.accept("then_run", ThenRunFinder.CODEC);
