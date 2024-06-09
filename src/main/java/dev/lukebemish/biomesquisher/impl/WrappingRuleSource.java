@@ -21,11 +21,11 @@ import java.util.stream.Stream;
 
 @Extend(targetClass = SurfaceRules.RuleSource.class, unsafe = false)
 @Expose
-interface WrappingRuleSource {
-    KeyDispatchDataCodec<? extends SurfaceRules.RuleSource> CODEC = KeyDispatchDataCodec.of(new MapCodec<>() {
-        static final MapCodec<SurfaceRules.RuleSource> DELEGATE = RecordCodecBuilder.mapCodec(i -> i.group(
-            SurfaceRules.RuleSource.CODEC.fieldOf("delegate").forGetter(r -> ((WrappingRuleSource) r).delegate())
-        ).apply(i, d -> (SurfaceRules.RuleSource) create(d)));
+interface WrappingRuleSource extends SurfaceRules.RuleSource {
+    KeyDispatchDataCodec<WrappingRuleSource> CODEC = KeyDispatchDataCodec.of(new MapCodec<>() {
+        static final MapCodec<WrappingRuleSource> DELEGATE = RecordCodecBuilder.mapCodec(i -> i.group(
+            SurfaceRules.RuleSource.CODEC.fieldOf("delegate").forGetter(WrappingRuleSource::delegate)
+        ).apply(i, WrappingRuleSource::create));
 
         @Override
         public <T> Stream<T> keys(DynamicOps<T> ops) {
@@ -36,7 +36,7 @@ interface WrappingRuleSource {
         }
 
         @Override
-        public <T> DataResult<SurfaceRules.RuleSource> decode(DynamicOps<T> ops, MapLike<T> input) {
+        public <T> DataResult<WrappingRuleSource> decode(DynamicOps<T> ops, MapLike<T> input) {
             if (ops instanceof NotifyingOps notifying) {
                 notifying.wrapped();
             }
@@ -44,7 +44,7 @@ interface WrappingRuleSource {
         }
 
         @Override
-        public <T> RecordBuilder<T> encode(SurfaceRules.RuleSource input, DynamicOps<T> ops, RecordBuilder<T> prefix) {
+        public <T> RecordBuilder<T> encode(WrappingRuleSource input, DynamicOps<T> ops, RecordBuilder<T> prefix) {
             if (ops instanceof NotifyingOps notifying) {
                 notifying.wrapped();
             }
@@ -87,13 +87,14 @@ interface WrappingRuleSource {
     SurfaceRules.RuleSource delegate();
 
     @Overrides("codec")
-    default KeyDispatchDataCodec<? extends SurfaceRules.RuleSource> codec() {
+    @SuppressWarnings("unused")
+    default KeyDispatchDataCodec<? extends SurfaceRules.RuleSource> codecImpl() {
         return CODEC;
     }
 
     @Overrides("apply")
     @SuppressWarnings("unused")
-    default @Coerce(targetName = "net.minecraft.world.level.levelgen.SurfaceRules$SurfaceRule") Object apply(@Coerce(targetName = "net.minecraft.world.level.levelgen.SurfaceRules$Context") Object context) {
+    default @Coerce(targetName = "net.minecraft.world.level.levelgen.SurfaceRules$SurfaceRule") Object applyImpl(@Coerce(targetName = "net.minecraft.world.level.levelgen.SurfaceRules$Context") Object context) {
         return accessApply(delegate(), context);
     }
 
