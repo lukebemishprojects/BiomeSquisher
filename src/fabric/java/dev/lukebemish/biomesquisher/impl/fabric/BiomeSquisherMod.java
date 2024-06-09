@@ -6,7 +6,10 @@ import dev.lukebemish.biomesquisher.Squisher;
 import dev.lukebemish.biomesquisher.impl.BiomeSquisher;
 import dev.lukebemish.biomesquisher.impl.BiomeSquisherCommands;
 import dev.lukebemish.biomesquisher.impl.InternalScalingSampler;
+import dev.lukebemish.biomesquisher.impl.Utils;
 import dev.lukebemish.biomesquisher.impl.server.WebServerThread;
+import dev.lukebemish.biomesquisher.impl.SurfaceModifierBootstrap;
+import dev.lukebemish.biomesquisher.surface.SurfaceRuleInjection;
 import net.fabricmc.api.EnvType;
 import net.fabricmc.api.ModInitializer;
 import net.fabricmc.fabric.api.command.v2.CommandRegistrationCallback;
@@ -26,9 +29,14 @@ public class BiomeSquisherMod implements ModInitializer {
             BiomeSquisherCommands.register(dispatcher));
         DynamicRegistries.register(BiomeSquisherRegistries.SERIES, Series.CODEC);
         DynamicRegistries.register(BiomeSquisherRegistries.SQUISHER, Squisher.CODEC);
+        DynamicRegistries.register(BiomeSquisherRegistries.SURFACE_RULE_INJECTION, SurfaceRuleInjection.CODEC);
 
         if (FabricLoader.getInstance().getEnvironmentType() == EnvType.CLIENT) {
             ServerLifecycleEvents.SERVER_STOPPING.register(server -> WebServerThread.stopServer());
         }
+
+        SurfaceModifierBootstrap.modifiers((s, c) -> Registry.register(BiomeSquisherRegistries.SURFACE_MODIFIER_TYPES, Utils.id(s), c));
+        SurfaceModifierBootstrap.predicates((s, c) -> Registry.register(BiomeSquisherRegistries.SURFACE_PREDICATE_TYPES, Utils.id(s), c));
+        SurfaceModifierBootstrap.finders((s, c) -> Registry.register(BiomeSquisherRegistries.SURFACE_FINDER_TYPES, Utils.id(s), c));
     }
 }

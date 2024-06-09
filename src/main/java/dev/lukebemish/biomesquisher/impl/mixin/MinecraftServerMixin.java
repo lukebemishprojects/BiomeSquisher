@@ -13,6 +13,7 @@ import net.minecraft.server.packs.repository.PackRepository;
 import net.minecraft.world.level.biome.MultiNoiseBiomeSource;
 import net.minecraft.world.level.dimension.LevelStem;
 import net.minecraft.world.level.levelgen.NoiseBasedChunkGenerator;
+import net.minecraft.world.level.levelgen.NoiseGeneratorSettings;
 import net.minecraft.world.level.storage.LevelStorageSource;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
@@ -41,9 +42,9 @@ public class MinecraftServerMixin {
     ) {
         //noinspection DataFlowIssue
         var access = ((MinecraftServer) (Object) this).registryAccess();
-        var registry = access.registry(Registries.LEVEL_STEM).orElseThrow();
-        registry.forEach(value -> {
-            ResourceKey<LevelStem> key = registry.getResourceKey(value).orElseThrow();
+        var levelRegistry = access.registry(Registries.LEVEL_STEM).orElseThrow();
+        levelRegistry.forEach(value -> {
+            ResourceKey<LevelStem> key = levelRegistry.getResourceKey(value).orElseThrow();
             if (value.generator() instanceof NoiseBasedChunkGenerator generator) {
                 var biomeSource = generator.getBiomeSource();
                 if (biomeSource instanceof MultiNoiseBiomeSource multiNoiseBiomeSource) {
@@ -55,6 +56,13 @@ public class MinecraftServerMixin {
             } else {
                 Utils.LOGGER.info("Not squishing {}; not a NoiseBasedChunkGenerator", key.location());
             }
+        });
+
+        var noiseSettingsRegistry = access.registry(Registries.NOISE_SETTINGS).orElseThrow();
+        noiseSettingsRegistry.forEach(value -> {
+            ResourceKey<NoiseGeneratorSettings> key = noiseSettingsRegistry.getResourceKey(value).orElseThrow();
+            Utils.LOGGER.info("Modifying surface rules in {}", key.location());
+            BiomeSquisher.modifySurfaceRules(value, key, access);
         });
     }
 }

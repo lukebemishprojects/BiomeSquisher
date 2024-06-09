@@ -1,3 +1,7 @@
+plugins {
+    alias libs.plugins.opensesame.loom
+}
+
 configurations {
     normalRuntimeModClasses
     runsImplementation.extendsFrom normalRuntimeModClasses

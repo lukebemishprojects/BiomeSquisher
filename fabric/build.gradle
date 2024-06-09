@@ -1,3 +1,7 @@
+plugins {
+    alias libs.plugins.opensesame.loom
+}
+
 loom {
     mixin {
         useLegacyMixinAp = false

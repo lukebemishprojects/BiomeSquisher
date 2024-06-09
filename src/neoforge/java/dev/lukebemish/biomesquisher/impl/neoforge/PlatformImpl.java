@@ -3,10 +3,13 @@ package dev.lukebemish.biomesquisher.impl.neoforge;
 import com.google.auto.service.AutoService;
 import dev.lukebemish.biomesquisher.impl.Platform;
 import dev.lukebemish.biomesquisher.impl.Utils;
+import net.minecraft.core.Registry;
+import net.minecraft.resources.ResourceKey;
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.fml.ModList;
 import net.neoforged.fml.loading.FMLEnvironment;
 import net.neoforged.fml.loading.FMLPaths;
+import net.neoforged.neoforge.registries.RegistryBuilder;
 
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -31,5 +34,10 @@ public class PlatformImpl implements Platform {
     @Override
     public boolean isClient() {
         return FMLEnvironment.dist == Dist.CLIENT;
+    }
+
+    @Override
+    public <T> Registry<T> registry(ResourceKey<Registry<T>> key) {
+        return new RegistryBuilder<>(key).create();
     }
 }

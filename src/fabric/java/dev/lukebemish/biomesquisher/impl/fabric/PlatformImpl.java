@@ -4,7 +4,10 @@ import com.google.auto.service.AutoService;
 import dev.lukebemish.biomesquisher.impl.Platform;
 import dev.lukebemish.biomesquisher.impl.Utils;
 import net.fabricmc.api.EnvType;
+import net.fabricmc.fabric.api.event.registry.FabricRegistryBuilder;
 import net.fabricmc.loader.api.FabricLoader;
+import net.minecraft.core.Registry;
+import net.minecraft.resources.ResourceKey;
 
 import java.nio.file.Path;
 import java.util.Optional;
@@ -24,5 +27,10 @@ public class PlatformImpl implements Platform {
     @Override
     public boolean isClient() {
         return FabricLoader.getInstance().getEnvironmentType() == EnvType.CLIENT;
+    }
+
+    @Override
+    public <T> Registry<T> registry(ResourceKey<Registry<T>> key) {
+        return FabricRegistryBuilder.createSimple(key).buildAndRegister();
     }
 }

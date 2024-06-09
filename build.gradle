@@ -7,7 +7,15 @@ plugins {
     alias libs.plugins.managedversioning
     alias libs.plugins.modsdotgroovy
     alias libs.plugins.modpublish
+    alias libs.plugins.opensesame.core
 }
+
+opensesame.apply(sourceSets.main)
+opensesame.apply(sourceSets.neoforge)
+opensesame.apply(sourceSets.fabric)
+opensesame.apply(sourceSets.testcommon)
+opensesame.apply(sourceSets.testneoforge)
+opensesame.apply(sourceSets.testfabric)
 
 managedVersioning {
     versionFile.set rootProject.file('version.properties')
@@ -208,12 +216,26 @@ sourceSets.testfabric.modsDotGroovy {
     enable()
 }
 
+configurations {
+    testneoforgeRuntimeClasspath.extendsFrom neoforgeRuntimeClasspath
+    testfabricRuntimeClasspath.extendsFrom fabricRuntimeClasspath
+    testfabricToRemapRuntimeClasspath.extendsFrom fabricToRemapRuntimeClasspath
+
+    testfabricCompileClasspath.extendsFrom fabricCompileClasspath
+    testneoforgeCompileClasspath.extendsFrom neoforgeCompileClasspath
+    testfabricToRemapCompileClasspath.extendsFrom fabricToRemapCompileClasspath
+    testcommonCompileClasspath.extendsFrom compileClasspath
+}
+
 dependencies {
     compileOnly cLibs.bundles.compileonly
     annotationProcessor cLibs.bundles.annotationprocessor
     compileOnly libs.fabric.mixin
     compileOnly libs.mixinextras.common
     implementation libs.pngj
+
+    implementation libs.opensesame.core
+    implementation libs.opensesame.mixin
 
     fabricCompileOnly cLibs.bundles.compileonly
     fabricAnnotationProcessor cLibs.bundles.annotationprocessor
@@ -222,17 +244,21 @@ dependencies {
     modFabricImplementation libs.fabric.api
     fabricImplementation libs.pngj
 
-    modTestfabricImplementation libs.fabric.loader
-    modTestfabricImplementation libs.fabric.api
+    fabricImplementation libs.opensesame.fabric
+    fabricInclude libs.opensesame.fabric
+
     testfabricAnnotationProcessor cLibs.bundles.annotationprocessor
-    testfabricImplementation libs.pngj
 
     neoforgeCompileOnly cLibs.bundles.compileonly
     neoforgeAnnotationProcessor cLibs.bundles.annotationprocessor
     neoforgeImplementation libs.pngj
 
+    neoforgeImplementation libs.opensesame.core
+    neoforgeInclude libs.opensesame.core
+    neoforgeImplementation libs.opensesame.mixin
+    neoforgeInclude libs.opensesame.mixin
+
     testneoforgeAnnotationProcessor cLibs.bundles.annotationprocessor
-    testneoforgeImplementation libs.pngj
 
     fabricInclude libs.pngj
     neoforgeInclude libs.pngj
@@ -240,12 +266,6 @@ dependencies {
     testcommonCompileOnly sourceSets.main.output
     testfabricCompileOnly sourceSets.fabric.output
     testneoforgeCompileOnly sourceSets.neoforge.output
-}
-
-configurations {
-    testfabricCompileClasspath.extendsFrom fabricCompileClasspath
-    testneoforgeCompileClasspath.extendsFrom neoforgeCompileClasspath
-    testcommonCompileClasspath.extendsFrom compileClasspath
 }
 
 java.toolchain.languageVersion = JavaLanguageVersion.of(21)
