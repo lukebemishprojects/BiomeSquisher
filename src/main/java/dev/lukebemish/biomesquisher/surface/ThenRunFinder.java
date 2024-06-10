@@ -8,8 +8,8 @@ public final class ThenRunFinder implements RuleFinder {
     public static final MapCodec<ThenRunFinder> CODEC = MapCodec.unit(INSTANCE);
 
     @Override
-    public ModifierTarget find(SurfaceRules.RuleSource source) {
-        return (c, m) -> {
+    public ModificationView find() {
+        return (c, m, source) -> {
             if (SurfaceRuleModifierUtils.isTest(source)) {
                 var ifTrue = SurfaceRuleModifierUtils.ifTrue(source);
                 var thenRun = SurfaceRuleModifierUtils.thenRun(source);

@@ -1,21 +1,19 @@
 package dev.lukebemish.biomesquisher.surface;
 
-import com.mojang.logging.LogUtils;
 import com.mojang.serialization.MapCodec;
+import dev.lukebemish.biomesquisher.impl.Utils;
 import dev.lukebemish.opensesame.annotations.Open;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.level.levelgen.SurfaceRules;
-import org.slf4j.Logger;
 
 import java.util.List;
 
 final class SurfaceRuleModifierUtils {
     private SurfaceRuleModifierUtils() {}
 
-    static final Logger LOGGER = LogUtils.getLogger();
     static final ResourceKey<MapCodec<? extends SurfaceRules.RuleSource>> SEQUENCE = ResourceKey.create(Registries.MATERIAL_RULE, new ResourceLocation("sequence"));
     static final ResourceKey<MapCodec<? extends SurfaceRules.RuleSource>> TEST = ResourceKey.create(Registries.MATERIAL_RULE, new ResourceLocation("condition"));
 
@@ -44,7 +42,7 @@ final class SurfaceRuleModifierUtils {
     }
 
     static void warnOnNonSequence(RuleModifier.Context context, SurfaceRules.RuleSource source) {
-        LOGGER.warn("In modifier {}, expected minecraft:sequence rule source, got {}", context.modifierKey(), source);
+        Utils.LOGGER.warn("In surface rule modifier {}, expected minecraft:sequence rule source, got {}", context.modifierKey(), source);
     }
 
     static boolean isTest(SurfaceRules.RuleSource source) {
@@ -72,6 +70,6 @@ final class SurfaceRuleModifierUtils {
     }
 
     static void warnOnNonTest(RuleModifier.Context context, SurfaceRules.RuleSource source) {
-        LOGGER.warn("In modifier {}, expected minecraft:condition rule source, got {}", context.modifierKey(), source);
+        Utils.LOGGER.warn("In surface rule modifier {}, expected minecraft:condition rule source, got {}", context.modifierKey(), source);
     }
 }

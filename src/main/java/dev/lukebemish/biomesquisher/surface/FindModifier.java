@@ -12,7 +12,7 @@ public record FindModifier(RuleFinder finder, RuleModifier modifier) implements 
 
     @Override
     public SurfaceRules.RuleSource apply(Context context, SurfaceRules.RuleSource source) {
-        return finder.find(source).apply(context, modifier);
+        return finder.find().apply(context, modifier, source);
     }
 
     @Override

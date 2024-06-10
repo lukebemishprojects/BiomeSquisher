@@ -10,8 +10,8 @@ public record MatchingFinder(RulePredicate predicate) implements RuleFinder {
     public static final MapCodec<MatchingFinder> CODEC = RulePredicate.CODEC.fieldOf("predicate").xmap(MatchingFinder::new, MatchingFinder::predicate);
 
     @Override
-    public ModifierTarget find(SurfaceRules.RuleSource source) {
-        return (c, m) -> {
+    public ModificationView find() {
+        return (c, m, source) -> {
             if (SurfaceRuleModifierUtils.isSequence(source)) {
                 List<SurfaceRules.RuleSource> parts = SurfaceRuleModifierUtils.sequence(source);
                 List<SurfaceRules.RuleSource> newParts = new ArrayList<>();

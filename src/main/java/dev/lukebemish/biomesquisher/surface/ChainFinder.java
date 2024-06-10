@@ -1,7 +1,6 @@
 package dev.lukebemish.biomesquisher.surface;
 
 import com.mojang.serialization.MapCodec;
-import net.minecraft.world.level.levelgen.SurfaceRules;
 
 import java.util.List;
 
@@ -9,11 +8,11 @@ public record ChainFinder(List<RuleFinder> finders) implements RuleFinder {
     public static final MapCodec<ChainFinder> CODEC = RuleFinder.CODEC.listOf().fieldOf("finders").xmap(ChainFinder::new, ChainFinder::finders);
 
     @Override
-    public ModifierTarget find(SurfaceRules.RuleSource source) {
-        ModifierTarget view = ModifierTarget.simple(source);
+    public ModificationView find() {
+        ModificationView view = ModificationView.simple();
         for (RuleFinder finder : finders) {
             var oldView = view;
-            view = (c, m) -> oldView.apply(c, (c1, s) -> finder.find(s).apply(c1, m));
+            view = (c, m, source) -> oldView.apply(c, (c1, s) -> finder.find().apply(c1, m, s), source);
         }
         return view;
     }

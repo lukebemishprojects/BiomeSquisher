@@ -17,8 +17,7 @@ modpublish = "0.5.1"
 managedversioning = "1.2.19"
 
 pngj = "2.1.0"
-nexuspublish = "2.0.0"
-opensesame = "0.5.7"
+opensesame = "0.5.10"
 
 [libraries]
 minecraft = { module = "com.mojang:minecraft", version.ref = "minecraft" }
@@ -43,6 +42,5 @@ opensesame_fabric = { module = "dev.lukebemish.opensesame:opensesame-fabric", ve
 managedversioning = { id = "dev.lukebemish.managedversioning", version.ref = "managedversioning" }
 modsdotgroovy = { id = "org.groovymc.modsdotgroovy", version.ref = "modsdotgroovy" }
 modpublish = { id = "me.modmuss50.mod-publish-plugin", version.ref = "modpublish" }
-nexuspublish = {id = "io.github.gradle-nexus.publish-plugin", version.ref = "nexuspublish"}
 opensesame_core = { id = "dev.lukebemish.opensesame", version.ref = "opensesame" }
 opensesame_loom = { id = "dev.lukebemish.opensesame.loom", version.ref = "opensesame" }

@@ -8,7 +8,6 @@ import com.mojang.serialization.MapLike;
 import com.mojang.serialization.RecordBuilder;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
 import dev.lukebemish.opensesame.annotations.Coerce;
-import dev.lukebemish.opensesame.annotations.Open;
 import dev.lukebemish.opensesame.annotations.extend.Constructor;
 import dev.lukebemish.opensesame.annotations.extend.Extend;
 import dev.lukebemish.opensesame.annotations.extend.Field;
@@ -17,6 +16,7 @@ import dev.lukebemish.opensesame.annotations.mixin.Expose;
 import net.minecraft.util.KeyDispatchDataCodec;
 import net.minecraft.world.level.levelgen.SurfaceRules;
 
+import java.util.function.Function;
 import java.util.stream.Stream;
 
 @Extend(targetClass = SurfaceRules.RuleSource.class, unsafe = false)
@@ -93,14 +93,14 @@ public interface WrappingRuleSource extends SurfaceRules.RuleSource {
     }
 
     @Overrides("apply")
-    @SuppressWarnings("unused")
+    @SuppressWarnings({"unused", "rawtypes", "unchecked"})
     default @Coerce(targetName = "net.minecraft.world.level.levelgen.SurfaceRules$SurfaceRule") Object applyImpl(@Coerce(targetName = "net.minecraft.world.level.levelgen.SurfaceRules$Context") Object context) {
-        return accessApply(delegate(), context);
+        return ((Function) delegate()).apply(context);
     }
 
-    @Open(targetClass = SurfaceRules.RuleSource.class, name = "apply", type = Open.Type.VIRTUAL)
+    @Overrides("apply")
     @SuppressWarnings("unused")
-    private static @Coerce(targetName = "net.minecraft.world.level.levelgen.SurfaceRules$SurfaceRule") Object accessApply(SurfaceRules.RuleSource source, @Coerce(targetName = "net.minecraft.world.level.levelgen.SurfaceRules$Context") Object context) {
-        throw new UnsupportedOperationException("Replaced by OpenSesame at compile time");
+    default Object applyBridge(Object context) {
+        return applyImpl(context);
     }
 }

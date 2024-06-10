@@ -6,7 +6,6 @@ import dev.lukebemish.biomesquisher.impl.injected.Squishable;
 import dev.lukebemish.biomesquisher.impl.mixin.MultiNoiseBiomeSourceAccessor;
 import dev.lukebemish.biomesquisher.impl.mixin.NoiseBasedChunkGeneratorAccessor;
 import dev.lukebemish.biomesquisher.impl.server.WebServerThread;
-import dev.lukebemish.biomesquisher.surface.RuleModifier;
 import dev.lukebemish.biomesquisher.surface.SurfaceRuleInjection;
 import dev.lukebemish.opensesame.annotations.Open;
 import dev.lukebemish.opensesame.annotations.mixin.UnFinal;
@@ -72,8 +71,10 @@ public final class BiomeSquisher {
             for (var modifier : loadRuleModifiers(key, access)) {
                 newSource = modifier.apply(newSource);
             }
-            newSource = (SurfaceRules.RuleSource) WrappingRuleSource.create(newSource);
+            newSource = WrappingRuleSource.create(newSource);
             setSurfaceRule(generator, newSource);
+        } else {
+            Utils.LOGGER.warn("Skipping surface rule modification for {} as it is already wrapped", key.location());
         }
     }
 
