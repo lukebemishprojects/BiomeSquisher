@@ -8,12 +8,14 @@ import dev.lukebemish.biomesquisher.impl.BiomeSquisher;
 import dev.lukebemish.biomesquisher.impl.BiomeSquisherCommands;
 import dev.lukebemish.biomesquisher.impl.InternalScalingSampler;
 import dev.lukebemish.biomesquisher.impl.Utils;
+import dev.lukebemish.biomesquisher.impl.WrappingRuleSource;
 import dev.lukebemish.biomesquisher.impl.server.WebServerThread;
 import dev.lukebemish.biomesquisher.impl.SurfaceModifierBootstrap;
 import dev.lukebemish.biomesquisher.surface.SurfaceRuleInjection;
 import net.minecraft.core.Registry;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.world.level.levelgen.DensityFunction;
+import net.minecraft.world.level.levelgen.SurfaceRules;
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.bus.api.IEventBus;
 import net.neoforged.fml.common.Mod;
@@ -32,6 +34,7 @@ import java.util.List;
 @Mod(Utils.MOD_ID)
 public class BiomeSquisherMod {
     private static final DeferredRegister<MapCodec<? extends DensityFunction>> DENSITY_FUNCTION_TYPE = DeferredRegister.create(Registries.DENSITY_FUNCTION_TYPE, Utils.MOD_ID);
+    private static final DeferredRegister<MapCodec<? extends SurfaceRules.RuleSource>> MATERIAL_RULE = DeferredRegister.create(Registries.MATERIAL_RULE, Utils.MOD_ID);
 
     static final List<Registry<?>> NEW_REGISTRIES = List.of(
         BiomeSquisherRegistries.SURFACE_MODIFIER_TYPES,
@@ -44,6 +47,9 @@ public class BiomeSquisherMod {
 
         DENSITY_FUNCTION_TYPE.register(modBus);
         DENSITY_FUNCTION_TYPE.register(InternalScalingSampler.LOCATION.getPath(), InternalScalingSampler.CODEC::codec);
+
+        MATERIAL_RULE.register(modBus);
+        MATERIAL_RULE.register(WrappingRuleSource.LOCATION.getPath(), WrappingRuleSource.CODEC::codec);
 
         modBus.addListener(DataPackRegistryEvent.NewRegistry.class, this::createDatapackRegistries);
         modBus.addListener(NewRegistryEvent.class, this::addRegistries);

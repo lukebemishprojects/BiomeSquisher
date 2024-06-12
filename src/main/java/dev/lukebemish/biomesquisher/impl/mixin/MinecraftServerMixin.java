@@ -13,7 +13,6 @@ import net.minecraft.server.packs.repository.PackRepository;
 import net.minecraft.world.level.biome.MultiNoiseBiomeSource;
 import net.minecraft.world.level.dimension.LevelStem;
 import net.minecraft.world.level.levelgen.NoiseBasedChunkGenerator;
-import net.minecraft.world.level.levelgen.NoiseGeneratorSettings;
 import net.minecraft.world.level.storage.LevelStorageSource;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
@@ -53,16 +52,12 @@ public class MinecraftServerMixin {
                 } else {
                     Utils.LOGGER.info("Not squishing {}; not a MultiNoiseBiomeSource", key.location());
                 }
+
+                var settings = generator.generatorSettings().value();
+                BiomeSquisher.modifySurfaceRules(settings, access);
             } else {
                 Utils.LOGGER.info("Not squishing {}; not a NoiseBasedChunkGenerator", key.location());
             }
-        });
-
-        var noiseSettingsRegistry = access.registry(Registries.NOISE_SETTINGS).orElseThrow();
-        noiseSettingsRegistry.forEach(value -> {
-            ResourceKey<NoiseGeneratorSettings> key = noiseSettingsRegistry.getResourceKey(value).orElseThrow();
-            Utils.LOGGER.info("Modifying surface rules in {}", key.location());
-            BiomeSquisher.modifySurfaceRules(value, key, access);
         });
     }
 }

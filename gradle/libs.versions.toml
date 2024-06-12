@@ -17,7 +17,7 @@ modpublish = "0.5.1"
 managedversioning = "1.2.19"
 
 pngj = "2.1.0"
-opensesame = "0.5.10"
+opensesame = "0.5.11"
 
 [libraries]
 minecraft = { module = "com.mojang:minecraft", version.ref = "minecraft" }

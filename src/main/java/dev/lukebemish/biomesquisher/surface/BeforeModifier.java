@@ -8,11 +8,11 @@ import net.minecraft.world.level.levelgen.SurfaceRules;
 import java.util.ArrayList;
 import java.util.List;
 
-public record AfterModifier(RulePredicate predicate, SurfaceRules.RuleSource source) implements RuleModifier {
-    public static final MapCodec<AfterModifier> CODEC = RecordCodecBuilder.mapCodec(i -> i.group(
-        RulePredicate.CODEC.fieldOf("predicate").forGetter(AfterModifier::predicate),
-        SurfaceRules.RuleSource.CODEC.fieldOf("source").forGetter(AfterModifier::source)
-    ).apply(i, AfterModifier::new));
+public record BeforeModifier(RulePredicate predicate, SurfaceRules.RuleSource source) implements RuleModifier {
+    public static final MapCodec<BeforeModifier> CODEC = RecordCodecBuilder.mapCodec(i -> i.group(
+        RulePredicate.CODEC.fieldOf("predicate").forGetter(BeforeModifier::predicate),
+        SurfaceRules.RuleSource.CODEC.fieldOf("source").forGetter(BeforeModifier::source)
+    ).apply(i, BeforeModifier::new));
 
     @Override
     public SurfaceRules.RuleSource apply(Context context, SurfaceRules.RuleSource source) {
@@ -20,11 +20,11 @@ public record AfterModifier(RulePredicate predicate, SurfaceRules.RuleSource sou
             List<SurfaceRules.RuleSource> sources = new ArrayList<>();
             boolean found = false;
             for (SurfaceRules.RuleSource s : SurfaceRuleModifierUtils.sequence(source)) {
-                sources.add(s);
                 if (!found && predicate.matches(context, s)) {
                     found = true;
                     sources.add(source);
                 }
+                sources.add(s);
             }
             if (!found) {
                 Utils.LOGGER.warn("In surface rule modifier {}, predicate {} did not match any rules", this, predicate);

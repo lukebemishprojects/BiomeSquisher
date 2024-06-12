@@ -4,6 +4,7 @@ import com.mojang.serialization.MapCodec;
 import dev.lukebemish.biomesquisher.surface.AfterModifier;
 import dev.lukebemish.biomesquisher.surface.AllPredicate;
 import dev.lukebemish.biomesquisher.surface.AlwaysPredicate;
+import dev.lukebemish.biomesquisher.surface.BeforeModifier;
 import dev.lukebemish.biomesquisher.surface.ManyFinder;
 import dev.lukebemish.biomesquisher.surface.AndPredicate;
 import dev.lukebemish.biomesquisher.surface.AnyPredicate;
@@ -16,6 +17,7 @@ import dev.lukebemish.biomesquisher.surface.NeverPredicate;
 import dev.lukebemish.biomesquisher.surface.NotPredicate;
 import dev.lukebemish.biomesquisher.surface.OrPredicate;
 import dev.lukebemish.biomesquisher.surface.CheckFinder;
+import dev.lukebemish.biomesquisher.surface.PrependModifier;
 import dev.lukebemish.biomesquisher.surface.ReplaceConditionModifier;
 import dev.lukebemish.biomesquisher.surface.ReplaceModifier;
 import dev.lukebemish.biomesquisher.surface.RuleFinder;
@@ -32,8 +34,10 @@ public final class SurfaceModifierBootstrap {
 
     public static void modifiers(BiConsumer<String, MapCodec<? extends RuleModifier>> consumer) {
         consumer.accept("append", AppendModifier.CODEC);
+        consumer.accept("prepend", PrependModifier.CODEC);
         consumer.accept("matching", MatchingModifier.CODEC);
         consumer.accept("after", AfterModifier.CODEC);
+        consumer.accept("before", BeforeModifier.CODEC);
         consumer.accept("find", FindModifier.CODEC);
         consumer.accept("replace", ReplaceModifier.CODEC);
         consumer.accept("replace_condition", ReplaceConditionModifier.CODEC);

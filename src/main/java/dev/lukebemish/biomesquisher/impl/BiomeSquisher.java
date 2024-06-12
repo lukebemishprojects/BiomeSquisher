@@ -1,6 +1,5 @@
 package dev.lukebemish.biomesquisher.impl;
 
-import com.mojang.datafixers.util.Pair;
 import dev.lukebemish.biomesquisher.BiomeSquisherRegistries;
 import dev.lukebemish.biomesquisher.impl.injected.Squishable;
 import dev.lukebemish.biomesquisher.impl.mixin.MultiNoiseBiomeSourceAccessor;
@@ -12,7 +11,6 @@ import dev.lukebemish.opensesame.annotations.mixin.UnFinal;
 import net.minecraft.core.Holder;
 import net.minecraft.core.RegistryAccess;
 import net.minecraft.resources.ResourceKey;
-import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.packs.resources.ResourceManager;
 import net.minecraft.world.level.biome.MultiNoiseBiomeSource;
 import net.minecraft.world.level.dimension.LevelStem;
@@ -25,7 +23,6 @@ import org.jetbrains.annotations.Nullable;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
-import java.util.function.UnaryOperator;
 
 public final class BiomeSquisher {
     private BiomeSquisher() {}
@@ -62,20 +59,20 @@ public final class BiomeSquisher {
         }
     }
 
-    public static void modifySurfaceRules(NoiseGeneratorSettings generator, ResourceKey<NoiseGeneratorSettings> key, RegistryAccess access) {
+    public static void setupSurfaceRuleModification(NoiseGeneratorSettings generator, ResourceKey<NoiseGeneratorSettings> key) {
         var surfaceRulesSource = generator.surfaceRule();
-        WrappingRuleSource.NotifyingOps.NotifyingJsonOps ops = WrappingRuleSource.NotifyingOps.NotifyingJsonOps.create();
+        WrappingRuleSource.NotifyingOps.NotifyingJsonOps ops = WrappingRuleSource.NotifyingOps.NotifyingJsonOps.create(wrapped -> wrapped.generator(key));
         SurfaceRules.RuleSource.CODEC.encodeStart(ops, surfaceRulesSource);
         if (!ops.isWrapped()) {
-            var newSource = surfaceRulesSource;
-            for (var modifier : loadRuleModifiers(key, access)) {
-                newSource = modifier.apply(newSource);
-            }
-            newSource = WrappingRuleSource.create(newSource);
-            setSurfaceRule(generator, newSource);
-        } else {
-            Utils.LOGGER.warn("Skipping surface rule modification for {} as it is already wrapped", key.location());
+            var wrappedSource = WrappingRuleSource.create(surfaceRulesSource, key);
+            setSurfaceRule(generator, wrappedSource);
         }
+    }
+
+    public static void modifySurfaceRules(NoiseGeneratorSettings generator, RegistryAccess access) {
+        var surfaceRulesSource = generator.surfaceRule();
+        WrappingRuleSource.NotifyingOps.NotifyingJsonOps ops = WrappingRuleSource.NotifyingOps.NotifyingJsonOps.create(wrapped -> wrapped.modifiers(loadRuleModifiers(wrapped.generator(), access)));
+        SurfaceRules.RuleSource.CODEC.encodeStart(ops, surfaceRulesSource);
     }
 
     @SuppressWarnings("unused")
@@ -89,18 +86,14 @@ public final class BiomeSquisher {
         throw new UnsupportedOperationException("Replaced by OpenSesame at compile time");
     }
 
-    private static List<UnaryOperator<SurfaceRules.RuleSource>> loadRuleModifiers(ResourceKey<NoiseGeneratorSettings> settingsKey, RegistryAccess registryAccess) {
-        List<Pair<ResourceLocation, SurfaceRuleInjection>> loaded = new ArrayList<>();
-        for (var entry : registryAccess.registry(BiomeSquisherRegistries.SURFACE_RULE_INJECTION).orElseThrow(() -> new IllegalStateException("Missing surface rule injection registry!")).entrySet()) {
-            if (entry.getValue().generators().contains(settingsKey)) {
-                loaded.add(Pair.of(entry.getKey().location(), entry.getValue()));
+    private static List<Holder<SurfaceRuleInjection>> loadRuleModifiers(ResourceKey<NoiseGeneratorSettings> settingsKey, RegistryAccess registryAccess) {
+        List<Holder<SurfaceRuleInjection>> loaded = new ArrayList<>();
+        for (var entry : registryAccess.registry(BiomeSquisherRegistries.SURFACE_RULE_INJECTION).orElseThrow(() -> new IllegalStateException("Missing surface rule injection registry!")).asHolderIdMap()) {
+            if (entry.value().generators().contains(settingsKey)) {
+                loaded.add(entry);
             }
         }
-        loaded.sort(Comparator.comparing(p -> p.getFirst().toString()));
-        List<UnaryOperator<SurfaceRules.RuleSource>> modifiers = new ArrayList<>();
-        for (var pair : loaded) {
-            modifiers.add(s -> pair.getSecond().modifier().apply(pair::getFirst, s));
-        }
-        return modifiers;
+        loaded.sort(Comparator.comparing(p -> p.unwrapKey().orElseThrow().location().toString()));
+        return loaded;
     }
 }

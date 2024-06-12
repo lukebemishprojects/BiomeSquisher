@@ -7,6 +7,7 @@ import dev.lukebemish.biomesquisher.impl.BiomeSquisher;
 import dev.lukebemish.biomesquisher.impl.BiomeSquisherCommands;
 import dev.lukebemish.biomesquisher.impl.InternalScalingSampler;
 import dev.lukebemish.biomesquisher.impl.Utils;
+import dev.lukebemish.biomesquisher.impl.WrappingRuleSource;
 import dev.lukebemish.biomesquisher.impl.server.WebServerThread;
 import dev.lukebemish.biomesquisher.impl.SurfaceModifierBootstrap;
 import dev.lukebemish.biomesquisher.surface.SurfaceRuleInjection;
@@ -25,6 +26,7 @@ public class BiomeSquisherMod implements ModInitializer {
     public void onInitialize() {
         BiomeSquisher.init();
         Registry.register(BuiltInRegistries.DENSITY_FUNCTION_TYPE, InternalScalingSampler.LOCATION, InternalScalingSampler.CODEC.codec());
+        Registry.register(BuiltInRegistries.MATERIAL_RULE, WrappingRuleSource.LOCATION, WrappingRuleSource.CODEC.codec());
         CommandRegistrationCallback.EVENT.register((dispatcher, buildContext, environment) ->
             BiomeSquisherCommands.register(dispatcher));
         DynamicRegistries.register(BiomeSquisherRegistries.SERIES, Series.CODEC);
