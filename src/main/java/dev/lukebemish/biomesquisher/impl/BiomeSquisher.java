@@ -1,6 +1,7 @@
 package dev.lukebemish.biomesquisher.impl;
 
 import dev.lukebemish.biomesquisher.BiomeSquisherRegistries;
+import dev.lukebemish.biomesquisher.impl.injected.KnowsOriginalKey;
 import dev.lukebemish.biomesquisher.impl.injected.Squishable;
 import dev.lukebemish.biomesquisher.impl.mixin.MultiNoiseBiomeSourceAccessor;
 import dev.lukebemish.biomesquisher.impl.mixin.NoiseBasedChunkGeneratorAccessor;
@@ -59,20 +60,23 @@ public final class BiomeSquisher {
         }
     }
 
-    public static void setupSurfaceRuleModification(NoiseGeneratorSettings generator, ResourceKey<NoiseGeneratorSettings> key) {
-        var surfaceRulesSource = generator.surfaceRule();
-        WrappingRuleSource.NotifyingOps.NotifyingJsonOps ops = WrappingRuleSource.NotifyingOps.NotifyingJsonOps.create(wrapped -> wrapped.generator(key));
-        SurfaceRules.RuleSource.CODEC.encodeStart(ops, surfaceRulesSource);
-        if (!ops.isWrapped()) {
-            var wrappedSource = WrappingRuleSource.create(surfaceRulesSource, key);
-            setSurfaceRule(generator, wrappedSource);
-        }
+    public static void setupOriginalKeyAwareGenerators(NoiseGeneratorSettings generator, ResourceKey<NoiseGeneratorSettings> key) {
+        //noinspection DataFlowIssue
+        ((KnowsOriginalKey) (Object) generator).biomesquisher_generatorKey(key);
     }
 
-    public static void modifySurfaceRules(NoiseGeneratorSettings generator, RegistryAccess access) {
+    public static void modifySurfaceRules(NoiseGeneratorSettings generator, RegistryAccess access, ResourceKey<NoiseGeneratorSettings> backupKey) {
         var surfaceRulesSource = generator.surfaceRule();
-        WrappingRuleSource.NotifyingOps.NotifyingJsonOps ops = WrappingRuleSource.NotifyingOps.NotifyingJsonOps.create(wrapped -> wrapped.modifiers(loadRuleModifiers(wrapped.generator(), access)));
+        //noinspection DataFlowIssue
+        var key = ((KnowsOriginalKey) (Object) generator).biomesquisher_generatorKey();
+        WrappingRuleSource.NotifyingOps.NotifyingJsonOps ops = WrappingRuleSource.NotifyingOps.NotifyingJsonOps.create(wrapped -> wrapped.modifiers(loadRuleModifiers(key == null ? wrapped.generator() : key, access)));
         SurfaceRules.RuleSource.CODEC.encodeStart(ops, surfaceRulesSource);
+        if (!ops.isWrapped()) {
+            var realKey = key == null ? backupKey : key;
+            var wrappedSource = WrappingRuleSource.create(surfaceRulesSource, realKey);
+            wrappedSource.modifiers(loadRuleModifiers(realKey, access));
+            setSurfaceRule(generator, wrappedSource);
+        }
     }
 
     @SuppressWarnings("unused")

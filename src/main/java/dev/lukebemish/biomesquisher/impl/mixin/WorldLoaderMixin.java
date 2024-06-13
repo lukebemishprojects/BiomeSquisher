@@ -29,8 +29,8 @@ public abstract class WorldLoaderMixin {
         noiseSettingsRegistry.forEach(value -> {
             ResourceKey<NoiseGeneratorSettings> key = noiseSettingsRegistry.getResourceKey(value).orElseThrow();
             Utils.LOGGER.info("Modifying surface rules in {}", key.location());
-            BiomeSquisher.setupSurfaceRuleModification(value, key);
-            BiomeSquisher.modifySurfaceRules(value, access);
+            BiomeSquisher.setupOriginalKeyAwareGenerators(value, key);
+            BiomeSquisher.modifySurfaceRules(value, access, key);
         });
 
         return original;

@@ -53,8 +53,9 @@ public class MinecraftServerMixin {
                     Utils.LOGGER.info("Not squishing {}; not a MultiNoiseBiomeSource", key.location());
                 }
 
+                var backupKey = ResourceKey.create(Registries.NOISE_SETTINGS, key.location());
                 var settings = generator.generatorSettings().value();
-                BiomeSquisher.modifySurfaceRules(settings, access);
+                BiomeSquisher.modifySurfaceRules(settings, access, backupKey);
             } else {
                 Utils.LOGGER.info("Not squishing {}; not a NoiseBasedChunkGenerator", key.location());
             }
