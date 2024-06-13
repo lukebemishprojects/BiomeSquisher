@@ -20,7 +20,7 @@ public final class BiomeSquisherRegistries {
 
     public static final ResourceKey<Registry<MapCodec<? extends RuleModifier>>> SURFACE_MODIFIER_TYPES_KEY = ResourceKey.createRegistryKey(Utils.id("surface_modifier_types"));
     public static final ResourceKey<Registry<MapCodec<? extends RulePredicate>>> SURFACE_PREDICATE_TYPES_KEY = ResourceKey.createRegistryKey(Utils.id("surface_predicate_types"));
-    public static final ResourceKey<Registry<MapCodec<? extends ConditionPredicate>>> SURFACE_CONDITION_PREDICATE_TYPES_KEY = ResourceKey.createRegistryKey(Utils.id("surface_predicate_types"));
+    public static final ResourceKey<Registry<MapCodec<? extends ConditionPredicate>>> SURFACE_CONDITION_PREDICATE_TYPES_KEY = ResourceKey.createRegistryKey(Utils.id("surface_condition_predicate_types"));
     public static final ResourceKey<Registry<MapCodec<? extends RuleFinder>>> SURFACE_FINDER_TYPES_KEY = ResourceKey.createRegistryKey(Utils.id("surface_finder_types"));
 
     public static final Registry<MapCodec<? extends RuleModifier>> SURFACE_MODIFIER_TYPES = Platform.INSTANCE.registry(SURFACE_MODIFIER_TYPES_KEY);
