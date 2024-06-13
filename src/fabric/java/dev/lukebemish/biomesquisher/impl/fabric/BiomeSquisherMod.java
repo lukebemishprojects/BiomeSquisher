@@ -39,6 +39,7 @@ public class BiomeSquisherMod implements ModInitializer {
 
         SurfaceModifierBootstrap.modifiers((s, c) -> Registry.register(BiomeSquisherRegistries.SURFACE_MODIFIER_TYPES, Utils.id(s), c));
         SurfaceModifierBootstrap.predicates((s, c) -> Registry.register(BiomeSquisherRegistries.SURFACE_PREDICATE_TYPES, Utils.id(s), c));
+        SurfaceModifierBootstrap.conditionPredicates((s, c) -> Registry.register(BiomeSquisherRegistries.SURFACE_CONDITION_PREDICATE_TYPES, Utils.id(s), c));
         SurfaceModifierBootstrap.finders((s, c) -> Registry.register(BiomeSquisherRegistries.SURFACE_FINDER_TYPES, Utils.id(s), c));
     }
 }

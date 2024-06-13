@@ -3,8 +3,13 @@ package dev.lukebemish.biomesquisher.impl;
 import com.mojang.serialization.MapCodec;
 import dev.lukebemish.biomesquisher.surface.AfterModifier;
 import dev.lukebemish.biomesquisher.surface.AllPredicate;
+import dev.lukebemish.biomesquisher.surface.AlwaysConditionPredicate;
 import dev.lukebemish.biomesquisher.surface.AlwaysPredicate;
+import dev.lukebemish.biomesquisher.surface.AndConditionPredicate;
 import dev.lukebemish.biomesquisher.surface.BeforeModifier;
+import dev.lukebemish.biomesquisher.surface.BiomeConditionPredicate;
+import dev.lukebemish.biomesquisher.surface.ConditionPredicate;
+import dev.lukebemish.biomesquisher.surface.IfTruePredicate;
 import dev.lukebemish.biomesquisher.surface.ManyFinder;
 import dev.lukebemish.biomesquisher.surface.AndPredicate;
 import dev.lukebemish.biomesquisher.surface.AnyPredicate;
@@ -13,8 +18,11 @@ import dev.lukebemish.biomesquisher.surface.ChainFinder;
 import dev.lukebemish.biomesquisher.surface.FindModifier;
 import dev.lukebemish.biomesquisher.surface.MatchingFinder;
 import dev.lukebemish.biomesquisher.surface.MatchingModifier;
+import dev.lukebemish.biomesquisher.surface.NeverConditionPredicate;
 import dev.lukebemish.biomesquisher.surface.NeverPredicate;
+import dev.lukebemish.biomesquisher.surface.NotConditionPredicate;
 import dev.lukebemish.biomesquisher.surface.NotPredicate;
+import dev.lukebemish.biomesquisher.surface.OrConditionPredicate;
 import dev.lukebemish.biomesquisher.surface.OrPredicate;
 import dev.lukebemish.biomesquisher.surface.CheckFinder;
 import dev.lukebemish.biomesquisher.surface.PrependModifier;
@@ -25,6 +33,7 @@ import dev.lukebemish.biomesquisher.surface.RuleModifier;
 import dev.lukebemish.biomesquisher.surface.RulePredicate;
 import dev.lukebemish.biomesquisher.surface.SequenceModifier;
 import dev.lukebemish.biomesquisher.surface.ThenRunFinder;
+import dev.lukebemish.biomesquisher.surface.TypeConditionPredicate;
 import dev.lukebemish.biomesquisher.surface.TypePredicate;
 
 import java.util.function.BiConsumer;
@@ -53,6 +62,17 @@ public final class SurfaceModifierBootstrap {
         consumer.accept("any", AnyPredicate.CODEC);
         consumer.accept("all", AllPredicate.CODEC);
         consumer.accept("type", TypePredicate.CODEC);
+        consumer.accept("if_true", IfTruePredicate.CODEC);
+    }
+
+    public static void conditionPredicates(BiConsumer<String, MapCodec<? extends ConditionPredicate>> consumer) {
+        consumer.accept("and", AndConditionPredicate.CODEC);
+        consumer.accept("or", OrConditionPredicate.CODEC);
+        consumer.accept("not", NotConditionPredicate.CODEC);
+        consumer.accept("always", AlwaysConditionPredicate.CODEC);
+        consumer.accept("never", NeverConditionPredicate.CODEC);
+        consumer.accept("type", TypeConditionPredicate.CODEC);
+        consumer.accept("biome", BiomeConditionPredicate.CODEC);
     }
 
     public static void finders(BiConsumer<String, MapCodec<? extends RuleFinder>> consumer) {

@@ -7,15 +7,18 @@ import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.world.level.biome.Biome;
 import net.minecraft.world.level.levelgen.SurfaceRules;
 
 import java.util.List;
+import java.util.function.Predicate;
 
 final class SurfaceRuleModifierUtils {
     private SurfaceRuleModifierUtils() {}
 
     static final ResourceKey<MapCodec<? extends SurfaceRules.RuleSource>> SEQUENCE = ResourceKey.create(Registries.MATERIAL_RULE, new ResourceLocation("sequence"));
     static final ResourceKey<MapCodec<? extends SurfaceRules.RuleSource>> TEST = ResourceKey.create(Registries.MATERIAL_RULE, new ResourceLocation("condition"));
+    static final ResourceKey<MapCodec<? extends SurfaceRules.ConditionSource>> BIOME = ResourceKey.create(Registries.MATERIAL_CONDITION, new ResourceLocation("biome"));
 
     static boolean isSequence(SurfaceRules.RuleSource source) {
         return BuiltInRegistries.MATERIAL_RULE.getResourceKey(source.codec().codec()).orElse(null) == SEQUENCE;
@@ -71,5 +74,22 @@ final class SurfaceRuleModifierUtils {
 
     static void warnOnNonTest(RuleModifier.Context context, SurfaceRules.RuleSource source) {
         Utils.LOGGER.warn("In surface rule modifier {}, expected minecraft:condition rule source, got {}", context.modifierKey(), source);
+    }
+
+    public static boolean isBiome(SurfaceRules.ConditionSource source) {
+        return BuiltInRegistries.MATERIAL_CONDITION.getResourceKey(source.codec().codec()).orElse(null) == BIOME;
+    }
+
+    @Open(
+        targetName = "net.minecraft.world.level.levelgen.SurfaceRules$BiomeConditionSource",
+        name = "biomeNameTest",
+        type = Open.Type.GET_INSTANCE
+    )
+    static Predicate<ResourceKey<Biome>> biomeNameTest(SurfaceRules.ConditionSource source) {
+        throw new UnsupportedOperationException("Replaced by OpenSesame at compile time");
+    }
+
+    static void warnOnNonBiome(RuleModifier.Context context, SurfaceRules.ConditionSource source) {
+        Utils.LOGGER.warn("In surface rule modifier {}, expected minecraft:biome condition source, got {}", context.modifierKey(), source);
     }
 }

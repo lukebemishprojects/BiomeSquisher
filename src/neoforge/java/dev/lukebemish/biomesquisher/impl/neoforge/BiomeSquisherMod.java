@@ -39,6 +39,7 @@ public class BiomeSquisherMod {
     static final List<Registry<?>> NEW_REGISTRIES = List.of(
         BiomeSquisherRegistries.SURFACE_MODIFIER_TYPES,
         BiomeSquisherRegistries.SURFACE_PREDICATE_TYPES,
+        BiomeSquisherRegistries.SURFACE_CONDITION_PREDICATE_TYPES,
         BiomeSquisherRegistries.SURFACE_FINDER_TYPES
     );
 
@@ -90,6 +91,9 @@ public class BiomeSquisherMod {
         );
         event.register(BiomeSquisherRegistries.SURFACE_PREDICATE_TYPES_KEY, helper ->
             SurfaceModifierBootstrap.predicates((s, c) -> helper.register(Utils.id(s), c))
+        );
+        event.register(BiomeSquisherRegistries.SURFACE_CONDITION_PREDICATE_TYPES_KEY, helper ->
+            SurfaceModifierBootstrap.conditionPredicates((s, c) -> helper.register(Utils.id(s), c))
         );
         event.register(BiomeSquisherRegistries.SURFACE_FINDER_TYPES_KEY, helper ->
             SurfaceModifierBootstrap.finders((s, c) -> helper.register(Utils.id(s), c))
