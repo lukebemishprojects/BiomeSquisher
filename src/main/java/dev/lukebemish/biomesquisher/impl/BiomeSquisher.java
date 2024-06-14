@@ -1,14 +1,11 @@
 package dev.lukebemish.biomesquisher.impl;
 
 import dev.lukebemish.biomesquisher.BiomeSquisherRegistries;
-import dev.lukebemish.biomesquisher.impl.injected.KnowsOriginalKey;
 import dev.lukebemish.biomesquisher.impl.injected.Squishable;
 import dev.lukebemish.biomesquisher.impl.mixin.MultiNoiseBiomeSourceAccessor;
 import dev.lukebemish.biomesquisher.impl.mixin.NoiseBasedChunkGeneratorAccessor;
 import dev.lukebemish.biomesquisher.impl.server.WebServerThread;
 import dev.lukebemish.biomesquisher.surface.SurfaceRuleInjection;
-import dev.lukebemish.opensesame.annotations.Open;
-import dev.lukebemish.opensesame.annotations.mixin.UnFinal;
 import net.minecraft.core.Holder;
 import net.minecraft.core.RegistryAccess;
 import net.minecraft.resources.ResourceKey;
@@ -60,40 +57,41 @@ public final class BiomeSquisher {
         }
     }
 
-    public static void setupOriginalKeyAwareGenerators(NoiseGeneratorSettings generator, ResourceKey<NoiseGeneratorSettings> key) {
-        //noinspection DataFlowIssue
-        ((KnowsOriginalKey) (Object) generator).biomesquisher_generatorKey(key);
-    }
-
-    public static void modifySurfaceRules(NoiseGeneratorSettings generator, RegistryAccess access, ResourceKey<NoiseGeneratorSettings> backupKey) {
-        var surfaceRulesSource = generator.surfaceRule();
-        //noinspection DataFlowIssue
-        var key = ((KnowsOriginalKey) (Object) generator).biomesquisher_generatorKey();
-        WrappingRuleSource.NotifyingOps.NotifyingJsonOps ops = WrappingRuleSource.NotifyingOps.NotifyingJsonOps.create(wrapped -> wrapped.modifiers(loadRuleModifiers(key == null ? wrapped.generator() : key, access)));
-        SurfaceRules.RuleSource.CODEC.encodeStart(ops, surfaceRulesSource);
-        if (!ops.isWrapped()) {
-            var realKey = key == null ? backupKey : key;
-            var wrappedSource = WrappingRuleSource.create(surfaceRulesSource, realKey);
-            wrappedSource.modifiers(loadRuleModifiers(realKey, access));
-            setSurfaceRule(generator, wrappedSource);
+    public static void modifySurfaceRules(NoiseBasedChunkGenerator generator, ResourceKey<LevelStem> key, RegistryAccess access) {
+        var modifiers = loadRuleModifiers(key, access);
+        if (!modifiers.isEmpty()) {
+            Utils.LOGGER.info("Injecting surface rules in {}", key.location());
+            NoiseGeneratorSettings settings = generator.generatorSettings().value();
+            SurfaceRules.RuleSource original = settings.surfaceRule();
+            SurfaceRules.RuleSource wrapped = wrapRule(original, access, key, modifiers);
+            @SuppressWarnings("deprecation") NoiseGeneratorSettings newSettings = new NoiseGeneratorSettings(
+                settings.noiseSettings(),
+                settings.defaultBlock(),
+                settings.defaultFluid(),
+                settings.noiseRouter(),
+                wrapped,
+                settings.spawnTarget(),
+                settings.seaLevel(),
+                settings.disableMobGeneration(),
+                settings.aquifersEnabled(),
+                settings.oreVeinsEnabled(),
+                settings.useLegacyRandomSource()
+            );
+            //noinspection DataFlowIssue
+            ((NoiseBasedChunkGeneratorAccessor) (Object) generator).biomesquisher_setGenerationSettings(Holder.direct(newSettings));
         }
     }
 
-    @SuppressWarnings("unused")
-    @Open(
-        targetClass = NoiseGeneratorSettings.class,
-        name = "surfaceRule",
-        type = Open.Type.SET_INSTANCE
-    )
-    @UnFinal
-    private static void setSurfaceRule(NoiseGeneratorSettings settings, SurfaceRules.RuleSource source) {
-        throw new UnsupportedOperationException("Replaced by OpenSesame at compile time");
+    private static SurfaceRules.RuleSource wrapRule(SurfaceRules.RuleSource original, RegistryAccess access, ResourceKey<LevelStem> key, List<Holder<SurfaceRuleInjection>> modifiers) {
+        var wrappedSource = WrappingRuleSource.create(original);
+        wrappedSource.modifiers(modifiers);
+        return wrappedSource;
     }
 
-    private static List<Holder<SurfaceRuleInjection>> loadRuleModifiers(ResourceKey<NoiseGeneratorSettings> settingsKey, RegistryAccess registryAccess) {
+    private static List<Holder<SurfaceRuleInjection>> loadRuleModifiers(ResourceKey<LevelStem> settingsKey, RegistryAccess registryAccess) {
         List<Holder<SurfaceRuleInjection>> loaded = new ArrayList<>();
         for (var entry : registryAccess.registry(BiomeSquisherRegistries.SURFACE_RULE_INJECTION).orElseThrow(() -> new IllegalStateException("Missing surface rule injection registry!")).asHolderIdMap()) {
-            if (entry.value().generators().contains(settingsKey)) {
+            if (entry.value().levels().contains(settingsKey)) {
                 loaded.add(entry);
             }
         }

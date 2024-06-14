@@ -8,9 +8,7 @@
     "ParameterListMixin",
     "MinecraftServerMixin",
     "MultiNoiseBiomeSourceMixin",
-    "WorldLoaderMixin",
-    "RuleSourceMixin",
-    "NoiseGeneratorSettingsMixin"
+    "RuleSourceMixin"
   ],
 	"injectors": {
 		"defaultRequire": 1

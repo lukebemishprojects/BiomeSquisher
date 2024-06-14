@@ -29,9 +29,6 @@ public interface RuleSourceMixin {
             @Override
             public <T> DataResult<T> encode(SurfaceRules.RuleSource input, DynamicOps<T> ops, T prefix) {
                 if (input instanceof WrappingRuleSource wrapped) {
-                    if (ops instanceof WrappingRuleSource.NotifyingOps notifying) {
-                        notifying.wrapped(wrapped);
-                    }
                     return encode(wrapped.delegate(), ops, prefix);
                 }
                 return original.encode(input, ops, prefix);
