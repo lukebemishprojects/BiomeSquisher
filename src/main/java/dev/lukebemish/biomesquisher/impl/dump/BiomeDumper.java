@@ -20,11 +20,11 @@ import java.util.Set;
 import java.util.function.BiFunction;
 
 public class BiomeDumper {
-    public static final boolean IS_PNGJ_PRESENT = isPngjPresent();
+    public static final boolean IS_PNJ_PRESENT = isPnjPresent();
 
-    private static boolean isPngjPresent() {
+    private static boolean isPnjPresent() {
         try {
-            Class.forName("ar.com.hjg.pngj.PngWriter", false, BiomeDumper.class.getClassLoader());
+            Class.forName("io.github.xfacthd.pnj.api.PNJ", false, BiomeDumper.class.getClassLoader());
             return true;
         } catch (ClassNotFoundException e) {
             return false;
@@ -36,7 +36,7 @@ public class BiomeDumper {
     public record SliceLocation(float i, float j, float k, float l) {
         public static final Codec<SliceLocation> CODEC = Codec.FLOAT.listOf().comapFlatMap(
             l -> l.size() == 4 ?
-                DataResult.success(new SliceLocation(l.get(0), l.get(1), l.get(2), l.get(3))) :
+                DataResult.success(new SliceLocation(l.getFirst(), l.get(1), l.get(2), l.get(3))) :
                 DataResult.error(() -> "Slice location must have 4 elements"),
             s -> List.of(s.i, s.j, s.j, s.l)
         );
@@ -64,7 +64,7 @@ public class BiomeDumper {
 
     public static void dumpPng(Level level, MultiNoiseBiomeSource source, Dimension x, Dimension y, SliceLocation location, SliceFrame frame) throws IOException {
         Output output;
-        if (IS_PNGJ_PRESENT) {
+        if (IS_PNJ_PRESENT) {
             output = PngOutput.INSTANCE_1024;
         } else {
             output = (l, biomeGetter, possibleBiomes) -> {

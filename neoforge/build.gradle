@@ -7,5 +7,5 @@ loom {
 }
 
 dependencies {
-    forgeRuntimeLibrary libs.pngj
+    forgeRuntimeLibrary libs.pnj
 }

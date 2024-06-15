@@ -1,7 +1,5 @@
 package dev.lukebemish.biomesquisher.test;
 
-import ar.com.hjg.pngj.ImageLineInt;
-import ar.com.hjg.pngj.PngReader;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.JsonElement;
@@ -10,6 +8,7 @@ import dev.lukebemish.biomesquisher.impl.BiomeSquisher;
 import dev.lukebemish.biomesquisher.impl.Utils;
 import dev.lukebemish.biomesquisher.impl.dump.BiomeDumper;
 import dev.lukebemish.biomesquisher.impl.dump.PngOutput;
+import io.github.xfacthd.pnj.api.PNJ;
 import net.minecraft.core.Holder;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.gametest.framework.GameTestGenerator;
@@ -20,7 +19,6 @@ import net.minecraft.world.level.Level;
 import net.minecraft.world.level.biome.Biome;
 import net.minecraft.world.level.biome.MultiNoiseBiomeSource;
 import net.minecraft.world.level.biome.MultiNoiseBiomeSourceParameterList;
-import net.minecraft.world.level.block.Rotation;
 import net.minecraft.world.level.dimension.LevelStem;
 
 import java.io.IOException;
@@ -77,10 +75,9 @@ public class BiomeSquisherGameTests {
                         parts[i] = root.relativize(path).getName(i).toString();
                     }
                     String testName = String.join("/", parts).replace(".json", "");
-                    try (var pngStream = Files.newInputStream(png);
-                         var jsonReader = Files.newBufferedReader(path)) {
-                        PngReader r = new PngReader(pngStream, false);
-                        if (r.imgInfo.cols != 1024 || r.imgInfo.rows != 1024) {
+                    try (var jsonReader = Files.newBufferedReader(path)) {
+                        var image = PNJ.decode(png);
+                        if (image.width() != 1024 || image.height() != 1024) {
                             var message = "Invalid png size for test layout: " + testName;
                             Utils.LOGGER.error(message);
                             throw new RuntimeException(message);
@@ -96,23 +93,10 @@ public class BiomeSquisherGameTests {
                         LayoutTest.LayoutSpecs specs = result.result().orElseThrow();
                         int[][] data = new int[1024][1024];
                         for (int i = 0; i < 1024; i++) {
-                            int[] row = data[i];
-                            ImageLineInt rRow = (ImageLineInt) r.readRow(i);
-                            if (rRow.getSize() == 1024*4) {
-                                for (int j = 0; j < 1024*4; j+=4) {
-                                    row[j/4] = rRow.getElem(j+2) | rRow.getElem(j+1) << 8 | rRow.getElem(j) << 16 | rRow.getElem(j+3) << 24;
-                                }
-                            } else if (rRow.getSize() == 1024*3) {
-                                for (int j = 0; j < 1024*3; j+=3) {
-                                    row[j/3] = rRow.getElem(j+2) | rRow.getElem(j+1) << 8 | rRow.getElem(j) << 16 | 0xFF << 24;
-                                }
-                            } else {
-                                for (int j = 0; j < 1024; j++) {
-                                    row[j] = rRow.getElem(j);
-                                }
+                            for (int j = 0; j < 1024; j++) {
+                                data[j][i] = image.getPixel(i, j, true);
                             }
                         }
-                        r.close();
                         layouts.add(new LayoutTest(testName, specs, new LayoutTest.Layout(data)));
                     } catch (IOException e) {
                         Utils.LOGGER.error("Failed to load test layout: " + testName, e);

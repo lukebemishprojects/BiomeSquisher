@@ -1,10 +1,9 @@
 package dev.lukebemish.biomesquisher.impl.dump;
 
-import ar.com.hjg.pngj.ImageInfo;
-import ar.com.hjg.pngj.ImageLineHelper;
-import ar.com.hjg.pngj.ImageLineInt;
-import ar.com.hjg.pngj.PngWriter;
 import dev.lukebemish.biomesquisher.impl.Platform;
+import io.github.xfacthd.pnj.api.PNJ;
+import io.github.xfacthd.pnj.api.data.Image;
+import io.github.xfacthd.pnj.api.define.ColorFormat;
 import net.minecraft.core.Holder;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.world.level.Level;
@@ -15,6 +14,7 @@ import org.jetbrains.annotations.NotNull;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.io.OutputStreamWriter;
+import java.io.UncheckedIOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.text.DateFormat;
@@ -60,17 +60,19 @@ public final class PngOutput implements BiomeDumper.Output {
 
     public Map<ResourceKey<Biome>, Integer> dumpToOutput(OutputStream os, BiFunction<Float, Float, Holder<Biome>> biomeGetter, Set<Holder<Biome>> possibleBiomes) {
         Map<ResourceKey<Biome>, Integer> hash;
-        PngWriter writer = new PngWriter(os, new ImageInfo(
-            resolution, resolution, 8, true
-        ));
+        var image = new Image(resolution, resolution, ColorFormat.RGB_ALPHA, 8, new byte[resolution*resolution*4]);
         hash = dumpImage(
             biomeGetter,
             possibleBiomes,
-            i -> new ImageLineInt(writer.imgInfo),
-            (i, line) -> writer.writeRow(line),
-            (line, j, color) -> ImageLineHelper.setPixelRGBA8(line, j, (color >> 16) & 0xFF, (color >> 8) & 0xFF, color & 0xFF, (color >> 24) & 0xFF)
+            i -> i,
+            (i, j) -> {},
+            (i, j, color) -> image.setPixel(j, i, color, true)
         );
-        writer.end();
+        try {
+            PNJ.encode(os, image);
+        } catch (IOException e) {
+            throw new UncheckedIOException(e);
+        }
         return hash;
     }
 

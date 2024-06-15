@@ -9,7 +9,7 @@ public final class Utils {
     private Utils() {}
 
     public static final String MOD_ID = "biomesquisher";
-    private static final ResourceLocation ROOT = new ResourceLocation(MOD_ID, MOD_ID);
+    private static final ResourceLocation ROOT = ResourceLocation.fromNamespaceAndPath(MOD_ID, MOD_ID);
     public static final Logger LOGGER = LoggerFactory.getLogger("Biome Squisher");
 
     public static ResourceLocation id(String path) {

@@ -25,7 +25,7 @@ loom {
 }
 
 dependencies {
-    forgeRuntimeLibrary libs.pngj
+    forgeRuntimeLibrary libs.pnj
     normalRuntimeModClasses(project(path: ':', configuration: 'neoforgeRuntimeModClasses')) {
         transitive = false
     }

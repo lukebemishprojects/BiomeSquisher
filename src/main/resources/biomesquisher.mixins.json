@@ -9,7 +9,8 @@
     "MinecraftServerMixin",
     "MultiNoiseBiomeSourceMixin",
     "RuleSourceMixin",
-    "DensityFunctionsMixin"
+    "DensityFunctionsMixin",
+    "BiomeSourceMixin"
   ],
 	"injectors": {
 		"defaultRequire": 1

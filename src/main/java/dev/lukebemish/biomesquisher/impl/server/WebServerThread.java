@@ -29,7 +29,6 @@ import java.util.concurrent.locks.ReentrantLock;
 public class WebServerThread extends Thread {
     private final HttpServer server;
     private final ImageProvider imageProvider;
-    private final Map<ResourceKey<Biome>, Integer> biomeColorHash;
 
     public WebServerThread(int listenerPort, Set<Holder<Biome>> possibleBiomes, ImageProvider imageProvider) {
         this.server = ServerBootstrap.bootstrap()
@@ -37,7 +36,6 @@ public class WebServerThread extends Thread {
             .registerHandler("*", new BiomeRequestHandler())
             .create();
         this.imageProvider = imageProvider;
-        this.biomeColorHash = PngOutput.biomeColorHash(possibleBiomes);
     }
 
     @Override
@@ -105,7 +103,7 @@ public class WebServerThread extends Thread {
     private static final Lock SERVER_LOCK = new ReentrantLock();
 
     public static void startServer(WebServerThread thread) {
-        if (!BiomeDumper.IS_PNGJ_PRESENT) {
+        if (!BiomeDumper.IS_PNJ_PRESENT) {
             throw new IllegalStateException("PNGJ is not present; cannot start biome dump server!");
         }
         Thread startup = new Thread(() -> {

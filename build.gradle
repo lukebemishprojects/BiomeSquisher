@@ -232,7 +232,7 @@ dependencies {
     annotationProcessor cLibs.bundles.annotationprocessor
     compileOnly libs.fabric.mixin
     compileOnly libs.mixinextras.common
-    implementation libs.pngj
+    implementation libs.pnj
 
     implementation libs.opensesame.core
     implementation libs.opensesame.mixin
@@ -242,7 +242,7 @@ dependencies {
 
     modFabricImplementation libs.fabric.loader
     modFabricImplementation libs.fabric.api
-    fabricImplementation libs.pngj
+    fabricImplementation libs.pnj
 
     fabricImplementation libs.opensesame.fabric
     fabricInclude libs.opensesame.fabric
@@ -251,7 +251,7 @@ dependencies {
 
     neoforgeCompileOnly cLibs.bundles.compileonly
     neoforgeAnnotationProcessor cLibs.bundles.annotationprocessor
-    neoforgeImplementation libs.pngj
+    neoforgeImplementation libs.pnj
 
     neoforgeImplementation libs.opensesame.core
     neoforgeInclude libs.opensesame.core
@@ -260,8 +260,8 @@ dependencies {
 
     testneoforgeAnnotationProcessor cLibs.bundles.annotationprocessor
 
-    fabricInclude libs.pngj
-    neoforgeInclude libs.pngj
+    fabricInclude libs.pnj
+    neoforgeInclude libs.pnj
 
     testcommonCompileOnly sourceSets.main.output
     testfabricCompileOnly sourceSets.fabric.output

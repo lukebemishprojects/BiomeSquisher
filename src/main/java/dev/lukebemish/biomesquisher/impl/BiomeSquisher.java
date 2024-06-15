@@ -1,6 +1,7 @@
 package dev.lukebemish.biomesquisher.impl;
 
 import dev.lukebemish.biomesquisher.BiomeSquisherRegistries;
+import dev.lukebemish.biomesquisher.impl.injected.ResettableSupplier;
 import dev.lukebemish.biomesquisher.impl.injected.Squishable;
 import dev.lukebemish.biomesquisher.impl.mixin.MultiNoiseBiomeSourceAccessor;
 import dev.lukebemish.biomesquisher.impl.mixin.NoiseBasedChunkGeneratorAccessor;
@@ -35,6 +36,7 @@ public final class BiomeSquisher {
         var parameters = ((MultiNoiseBiomeSourceAccessor) multiNoiseBiomeSource).biomesquisher_parameters();
         ((Squishable) parameters).biomesquisher_squish(key, access, resourceManager);
         Squishers squishers = ((Squishable) parameters).biomesquisher_squishers();
+        ((ResettableSupplier.Resettable) multiNoiseBiomeSource).biomesquisher$reset();
         if (generator != null && squishers != null && squishers.needsSpacialScaling()) {
             NoiseGeneratorSettings settings = generator.generatorSettings().value();
             NoiseRouter router = settings.noiseRouter();

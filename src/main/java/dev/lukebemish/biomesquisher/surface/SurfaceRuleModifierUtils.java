@@ -16,9 +16,9 @@ import java.util.function.Predicate;
 final class SurfaceRuleModifierUtils {
     private SurfaceRuleModifierUtils() {}
 
-    static final ResourceKey<MapCodec<? extends SurfaceRules.RuleSource>> SEQUENCE = ResourceKey.create(Registries.MATERIAL_RULE, new ResourceLocation("sequence"));
-    static final ResourceKey<MapCodec<? extends SurfaceRules.RuleSource>> TEST = ResourceKey.create(Registries.MATERIAL_RULE, new ResourceLocation("condition"));
-    static final ResourceKey<MapCodec<? extends SurfaceRules.ConditionSource>> BIOME = ResourceKey.create(Registries.MATERIAL_CONDITION, new ResourceLocation("biome"));
+    static final ResourceKey<MapCodec<? extends SurfaceRules.RuleSource>> SEQUENCE = ResourceKey.create(Registries.MATERIAL_RULE, ResourceLocation.withDefaultNamespace("sequence"));
+    static final ResourceKey<MapCodec<? extends SurfaceRules.RuleSource>> TEST = ResourceKey.create(Registries.MATERIAL_RULE, ResourceLocation.withDefaultNamespace("condition"));
+    static final ResourceKey<MapCodec<? extends SurfaceRules.ConditionSource>> BIOME = ResourceKey.create(Registries.MATERIAL_CONDITION, ResourceLocation.withDefaultNamespace("biome"));
 
     static boolean isSequence(SurfaceRules.RuleSource source) {
         return BuiltInRegistries.MATERIAL_RULE.getResourceKey(source.codec().codec()).orElse(null) == SEQUENCE;
