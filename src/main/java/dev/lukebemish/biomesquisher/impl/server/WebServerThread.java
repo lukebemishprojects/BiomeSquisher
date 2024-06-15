@@ -5,7 +5,6 @@ import dev.lukebemish.biomesquisher.impl.Platform;
 import dev.lukebemish.biomesquisher.impl.dump.BiomeDumper;
 import dev.lukebemish.biomesquisher.impl.dump.PngOutput;
 import net.minecraft.core.Holder;
-import net.minecraft.resources.ResourceKey;
 import net.minecraft.world.level.biome.Biome;
 import org.apache.http.*;
 import org.apache.http.entity.ByteArrayEntity;
@@ -20,7 +19,6 @@ import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.util.Locale;
-import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.Lock;
@@ -104,7 +102,7 @@ public class WebServerThread extends Thread {
 
     public static void startServer(WebServerThread thread) {
         if (!BiomeDumper.IS_PNJ_PRESENT) {
-            throw new IllegalStateException("PNGJ is not present; cannot start biome dump server!");
+            throw new IllegalStateException("PNJ is not present; cannot start biome dump server!");
         }
         Thread startup = new Thread(() -> {
             SERVER_LOCK.lock();

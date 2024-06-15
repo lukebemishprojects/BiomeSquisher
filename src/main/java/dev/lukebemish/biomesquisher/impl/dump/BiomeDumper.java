@@ -68,7 +68,7 @@ public class BiomeDumper {
             output = PngOutput.INSTANCE_1024;
         } else {
             output = (l, biomeGetter, possibleBiomes) -> {
-                throw new IOException("PNGJ is not present; cannot export biome dump as PNG!");
+                throw new IOException("PNJ is not present; cannot export biome dump as PNG!");
             };
         }
         dump(level, source, x, y, location, output, frame);
