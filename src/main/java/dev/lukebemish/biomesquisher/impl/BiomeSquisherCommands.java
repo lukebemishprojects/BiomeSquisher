@@ -164,7 +164,6 @@ public class BiomeSquisherCommands {
             WebServerThread.startServer(
                 new WebServerThread(
                     port,
-                    biomeSource.possibleBiomes(),
                     (x, y, location, frame, output) -> BiomeDumper.dump(commandContext.getSource().getLevel(), multiNoiseBiomeSource, x, y, location, output, frame)
                 )
             );

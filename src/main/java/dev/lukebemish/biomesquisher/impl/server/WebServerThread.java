@@ -4,8 +4,6 @@ import dev.lukebemish.biomesquisher.impl.Dimension;
 import dev.lukebemish.biomesquisher.impl.Platform;
 import dev.lukebemish.biomesquisher.impl.dump.BiomeDumper;
 import dev.lukebemish.biomesquisher.impl.dump.PngOutput;
-import net.minecraft.core.Holder;
-import net.minecraft.world.level.biome.Biome;
 import org.apache.http.*;
 import org.apache.http.entity.ByteArrayEntity;
 import org.apache.http.entity.ContentType;
@@ -19,7 +17,6 @@ import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.util.Locale;
-import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
@@ -28,7 +25,7 @@ public class WebServerThread extends Thread {
     private final HttpServer server;
     private final ImageProvider imageProvider;
 
-    public WebServerThread(int listenerPort, Set<Holder<Biome>> possibleBiomes, ImageProvider imageProvider) {
+    public WebServerThread(int listenerPort, ImageProvider imageProvider) {
         this.server = ServerBootstrap.bootstrap()
             .setListenerPort(listenerPort)
             .registerHandler("*", new BiomeRequestHandler())
