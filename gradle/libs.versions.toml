@@ -1,11 +1,11 @@
 [versions]
-minecraft = "1.21"
-parchment = "2024.04.14"
+minecraft = "1.21.1"
+parchment = "2024.07.07"
 
-neoforge = "21.0.6-beta"
+neoforge = "21.1.8"
 
 fabric_loader = "0.15.11"
-fabric_api = "0.100.1+1.21"
+fabric_api = "0.102.1+1.21.1"
 
 fabric_mixin = "0.13.3+mixin.0.8.5"
 mixinextras = "0.3.5"
@@ -27,7 +27,7 @@ fabric_api = { module = "net.fabricmc.fabric-api:fabric-api", version.ref = "fab
 
 neoforge = { module = "net.neoforged:neoforge", version.ref = "neoforge" }
 
-parchment = { module = "org.parchmentmc.data:parchment-1.20.4", version.ref = "parchment" }
+parchment = { module = "org.parchmentmc.data:parchment-1.21", version.ref = "parchment" }
 
 fabric_mixin = { module = "net.fabricmc:sponge-mixin", version.ref = "fabric_mixin" }
 mixinextras_common = { module = "io.github.llamalad7:mixinextras-common", version.ref = "mixinextras" }
